@@ -1,0 +1,377 @@
+:root {
+    margin: 0; 
+    padding: 0; 
+    background-color: black; 
+    margin: auto;
+    width: 600px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 12pt;
+}
+
+h1, h2, h3, h4 {
+    display: block;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 3em;
+    text-align: center;
+    color: white;
+}
+
+h2 {
+    font-size: 2em;
+}
+
+h3 {
+    font-size: 1.5em;
+}
+
+.center {
+    margin: auto;
+    width: 100%;
+    padding: 10px 50px;
+}
+
+.waitMessage {
+    color: white;
+    text-align: center;
+    width: 100%;
+}
+
+/* Style the tab */
+.tab {
+    overflow: hidden;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+    background-color: inherit;
+    float: left;
+    border-width: 2px;
+    border-color: white;
+    border-style: solid;
+    border-radius: 10px 10px 0px 0px;
+    background-color: #555;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    width: 25%;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+input[type="button"], 
+input[type="range"],
+input[type="checkbox"],
+select,
+button {
+    cursor: pointer;
+}
+
+.settings {
+    display:flex; 
+    width:100%;
+}
+.settings label {
+    margin-right: auto;
+}
+.settings labelRight {
+    margin-left: auto;
+}
+.settings input[type="range"] {
+    width: 40%;
+}
+.settings input[type="text"] {
+    width: 10%;
+}
+.settings input[type="checkbox"] {
+    margin-left: auto;
+}
+.settings select {
+    width: 25%;
+}
+
+.settingsBtn {
+    display:flex; 
+    width:100%;
+}
+.settingsBtn label {
+    margin-right: auto;
+}
+.settingsBtn input[type="text"],
+.settingsBtn input[type="password"] {
+    width: 25%;
+}
+.settingsBtn input[type="button"] {
+    width: 15%;
+}
+
+.mpConfigFormElements{
+    width: 100%;
+    display: flex;
+    margin-bottom: 0px;
+    align-items: center;
+}
+
+.mpConfigFormElements label {
+    width: 50%;
+}
+
+.mpConfigFormElements .mpConfigFormVal,
+.mpConfigFormElements .mpConfigFormValRange,
+.mpConfigFormElements .mpConfigFormBtn {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    width: 50%;
+}
+
+.mpConfigFormElements .mpConfigFormVal input[type='text'],
+.mpConfigFormElements .mpConfigFormVal input[type='number'],
+.mpConfigFormElements .mpConfigFormVal select,
+.mpConfigFormElements .mpConfigFormValRange input[type='range'] {
+    flex-grow: 4;
+}
+
+.mpConfigFormElements .mpConfigFormValRange input[type='number'] {
+    width: 25%;
+    margin-left: 5px;
+}
+
+.mpConfigFormElements .mpConfigFormBtn button {
+    width: 100%;
+    margin-left: 5px;
+}
+
+.mpConfigFormElements .mpConfigFormBtn select {
+    min-width: 50%;
+    transform: translateY(10%);
+}
+
+.mpConfigNotes {
+    font-size: 0.85em;
+    font-style: italic;
+    color: rgb(87, 87, 87);
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+
+.update {
+    display: flex;
+    width: 100%;
+}
+.update label {
+    margin-right: auto;
+}
+.update input[type="file"] {
+    width: 35%;
+}
+.update input[type="submit"] {
+    width: 15%;
+}
+
+#prgBar {
+    width: 100%;
+    height: 10px;
+    margin-top: 3px;
+    background-color: grey;
+  }
+  
+#prg {
+    width: 1%;
+    height: 100%;
+    background-color: green;
+  }
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+    background-color: #777;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+    background-color: #ccc;
+    border-color: white white #ccc white;
+}
+
+/* Style the tab content */
+.tabContent {
+    display: none;
+    padding: 6px 12px;
+    background-color: #ccc;
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+    border-radius: 0px 0px 10px 10px;
+} 
+
+table, th, td {
+    border: 1px solid black;
+}
+
+canvas {
+    border: 2px solid rgb(151, 149, 149);
+    margin: auto;
+}
+
+.notes {
+    font-size: 0.8em;
+}
+
+.expandable {
+    cursor: pointer;
+}
+
+.collapsed {
+    display:none;
+}
+
+.footer {
+    font-size: 0.85em;
+    text-align: center;
+    color: gray;
+}
+
+.hyperlink {
+    color: blue;
+}
+
+.consoleRx {
+    width: 100%;
+    height: 400px;
+    border-width: 2px;
+    border-color: rgb(0, 0, 0);
+    background-color:rgb(133, 133, 133);
+    overflow: scroll;
+}
+
+.consoleTx {
+    width: 100%;
+    display: flex;
+    margin-top: 5px;
+}
+
+#consoleTx input[type="text"] {
+    width: 90%;
+    overflow: hidden;
+}
+
+#consoleTx input[type="button"] {
+    width: 20%;
+}
+
+#consoleTx2 input[type="checkbox"] {
+    width: 5%;
+}
+
+#consoleTx2 label {
+    width: 25%;
+    font-size: 0.8em;
+}
+
+#consoleTx2 input[type="button"] {
+    width: 20%;
+}
+
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    margin: auto;
+}
+  
+/* Modal Content/Box */
+.modal-content {
+    background-color: #ccc;
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 400px;
+}
+
+.modal-content table, 
+.modal-content tr, 
+.modal-content th,
+.modal-content td {
+    border: none;
+    text-align: left;
+}
+
+.modal-content th,
+.modal-content td {
+    width: 150px;
+}
+
+.modal-content input[type="button"] {
+    width: 100px;
+    height: 25px;
+    margin: o auto;
+    display: block;
+}
+
+  /* The Close Button */
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  } 
+
+  /* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    /* border-bottom: 1px dotted black; */
+    cursor: pointer;
+  }
+  
+  /* Tooltip text */
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: rgb(127, 127, 127);
+    text-align: center;
+    padding: 5px 0;
+    margin-left: 5px;
+    border: 1px solid black;
+    border-radius: 6px;
+    min-width: 250px;
+   
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+    font-size: 12px;
+    font-style: italic;
+    font-weight: normal;
+    color: lightgrey;
+  }
+
+  /* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+

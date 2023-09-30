@@ -1,0 +1,257 @@
+Reg (dec)       Reg (hex)       Def val (dec)   Def val (hex)   Expected function
+0				0				2				2               
+1				1				0				0
+2				2				0				0
+3				3				113				71
+4				4				1				1
+5				5				0				0
+6				6				90				5A              Maximum intensity threshold
+7				7				8				8               ? Some kind of scaling in both x and y at high values (e.g. 100)?
+8				8				190				BE              Brightness (inv, min 10), also decreases frame rate at lower values?
+9				9				40				28              
+10				A				80				50              
+11				B				32				20
+12				C				64				40
+13				D				1				1               Enable IR pixel clock on 0x06
+14				E				1				1               ? Stops working if val > 2
+15				F				127				7F
+16				10				4				4
+17				11				0				0
+18				12				128				80              horizontal resolution (8xval)
+19				13				96				60              vertical resolution (8xval)
+20				14				16				10
+21				15				0				0
+22				16				0				0
+23				17				10				A               ? Something brightness related, higher increases brightness (0-12)
+24				18				52				34
+25				19				0				0
+26				1A				180				B4              Maximum brightness (reg 0x08)
+27				1B				3				3               Minimum intensity threshold
+28				1C				100				64
+29				1D				66				42
+30				1E				0				0
+31				1F				7				7
+32				20				0				0
+33				21				2				2               Output mode
+34				22				103				67
+35				23				16				10
+36				24				220				DC
+37				25				240				F0
+38				26				4				4               ? MSB Some kind of x offset or scaling
+39				27				0				0               ? LSB Some kind of x offset or scaling
+40				28				3				3               ? MSB Some kind of y offset or scaling
+41				29				0				0               ? LSB Some kind of y offset or scaling
+42				2A				0				0
+43				2B				50				32
+44				2C				18				12
+45				2D				4				4
+46				2E				20				14
+47				2F				0				0
+48				30				1				1               ? Write 0x08 to apply settings
+49				31				0				0
+50				32				0				0
+51				33				0				0
+52				34				0				0
+53				35				0				0
+54				36				0				0               
+55				37				255				FF              Output register
+56				38				255				FF              Output register
+57				39				255				FF              Output register
+58				3A				255				FF              Output register
+59				3B				255				FF              Output register
+60				3C				255				FF              Output register
+61				3D				255				FF              Output register
+62				3E				255				FF              Output register
+63				3F				255				FF              Output register
+64				40				255				FF              Output register
+65				41				255				FF              Output register
+66				42				255				FF              Output register
+67				43				255				FF              Output register
+68				44				255				FF              Output register
+69				45				255				FF              Output register
+70				46				255				FF              Output register
+71				47				255				FF              Output register
+72				48				255				FF              Output register
+73				49				255				FF              Output register
+74				4A				255				FF              Output register
+75				4B				255				FF              Output register
+76				4C				255				FF              Output register
+77				4D				255				FF              Output register
+78				4E				255				FF              Output register
+79				4F				255				FF              Output register
+80				50				255				FF              Output register
+81				51				255				FF              Output register
+82				52				255				FF              Output register
+83				53				255				FF              Output register
+84				54				255				FF              Output register
+85				55				255				FF              Output register
+86				56				255				FF              Output register
+87				57				255				FF              Output register
+88				58				255				FF              Output register
+89				59				255				FF              Output register
+90				5A				255				FF              Output register
+91				5B				255				FF              Output register
+92				5C				255				FF              Output register
+93				5D				255				FF
+94				5E				255				FF
+95				5F				255				FF
+96				60				255				FF
+97				61				255				FF
+98				62				255				FF
+99				63				255				FF
+100				64				255				FF
+101				65				255				FF
+102				66				255				FF
+103				67				255				FF
+104				68				255				FF
+105				69				255				FF
+106				6A				255				FF
+107				6B				255				FF
+108				6C				255				FF
+109				6D				255				FF
+110				6E				255				FF
+111				6F				255				FF
+112				70				255				FF
+113				71				255				FF
+114				72				255				FF
+115				73				255				FF
+116				74				255				FF
+117				75				255				FF
+118				76				255				FF
+119				77				255				FF
+120				78				255				FF
+121				79				255				FF
+122				7A				255				FF
+123				7B				255				FF
+124				7C				255				FF
+125				7D				255				FF
+126				7E				255				FF
+127				7F				0				0
+128				80				0				0
+129				81				255				2
+130				82				0				0
+131				83				0				0
+132				84				0				0
+133				85				0				0
+134				86				0				0
+135				87				0				0
+136				88				0				0
+137				89				0				0
+138				8A				0				0
+139				8B				0				0
+140				8C				0				0
+141				8D				0				0
+142				8E				1				1
+143				8F				0				0
+144				90				0				0
+145				91				0				0
+146				92				0				0
+147				93				0				0
+148				94				0				0
+149				95				0				0
+150				96				0				0
+151				97				0				0
+152				98				0				0
+153				99				0				0
+154				9A				0				0
+155				9B				0				0
+156				9C				0				0
+157				9D				0				0
+158				9E				255				FF
+159				9F				1				1
+160				A0				0				0
+161				A1				0				0
+162				A2				0				0
+163				A3				0				0
+164				A4				0				0
+165				A5				0				0
+166				A6				0				0
+167				A7				0				0
+168				A8				0				0
+169				A9				3				FF
+170				AA				0				0
+171				AB				0				0
+172				AC				0				0
+173				AD				0				0
+174				AE				0				0
+175				AF				0				0
+176				B0				0				0
+177				B1				0				0
+178				B2				0				0
+179				B3				0				0
+180				B4				0				0
+181				B5				0				0
+182				B6				0				0
+183				B7				0				0
+184				B8				0				0
+185				B9				0				0
+186				BA				0				0
+187				BB				0				0
+188				BC				0				0
+189				BD				0				0
+190				BE				0				0
+191				BF				0				0
+192				C0				0				0
+193				C1				255				FF
+194				C2				0				0
+195				C3				0				0
+196				C4				0				0
+197				C5				0				0
+198				C6				0				0
+199				C7				0				0
+200				C8				0				0
+201				C9				0				0
+202				CA				0				0
+203				CB				0				0
+204				CC				0				0
+205				CD				0				0
+206				CE				1				1
+207				CF				0				0
+208				D0				0				0
+209				D1				0				0
+210				D2				0				0
+211				D3				0				0
+212				D4				0				0
+213				D5				0				0
+214				D6				0				0
+215				D7				0				0
+216				D8				0				0
+217				D9				0				0
+218				DA				0				0
+219				DB				0				0
+220				DC				0				0
+221				DD				0				0
+222				DE				255				FF
+223				DF				1				1
+224				E0				0				0
+225				E1				0				0
+226				E2				0				0
+227				E3				0				0
+228				E4				0				0
+229				E5				0				0
+230				E6				0				0
+231				E7				0				0
+232				E8				0				0
+233				E9				255				FF
+234				EA				0				0
+235				EB				0				0
+236				EC				0				0
+237				ED				0				0
+238				EE				0				0
+239				EF				0				0
+240				F0				0				0
+241				F1				0				0
+242				F2				0				0
+243				F3				0				0
+244				F4				0				0
+245				F5				0				0
+246				F6				0				0
+247				F7				0				0
+248				F8				0				0
+249				F9				0				0
+250				FA				0				0
+251				FB				0				0
+252				FC				0				0
+253				FD				0				0
+254				FE				0				0
+255				FF				0				0

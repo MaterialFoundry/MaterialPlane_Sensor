@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+  <title>Material Sensor</title>
+</head>
+
+<body id="index">
+  
+
+  <!-- <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script> -->
+
+  <div class="center">
+    
+    <div class="waitMessage" id="waitMessage">
+      <h1>Material Plane Sensor</h1>
+      <div id="waitMessageTxt">
+        Establishing connection with the sensor.<br>
+        Please wait.
+      </div>
+    </div>
+
+    <div id="mainBody" style="display:none">
+
+      <!-- Update popup -->
+      <div id="updatePopup" class="modal">
+        <!-- Popup content -->
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div>There is an update available for the sensor:<br><br></div>
+          <div id="popupContent"></div>
+          <div><br>To update:<br>
+            <ul>
+              <li>Download the latest version from <a class="hyperlink" href="https://github.com/MaterialFoundry/MaterialPlane_Sensor/releases" target="_blank">Github</a></li>
+              <li>Upload the file on the <a class="hyperlink" href="update" target="_blank">update page</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h1>Material Plane Sensor</h1>
+     <!-- Tab links -->
+    <div class="tab">
+      <button class="tabButtons active" id="StatusBtn" onclick="openTab('Status')">Status</button>
+      <button class="tabButtons" id="NetworkBtn" onclick="openTab('Network')">Network</button>
+      <button class="tabButtons" id="SensorBtn" onclick="openTab('Sensor')">IR Tracker</button>
+      <button class="tabButtons" id="ConsoleBtn" onclick="openTab('Console')">Console</button>
+    </div>
+
+    <!-- Tab content -->
+    <div id="Status" class="tabContent">
+      <h3>Status</h3>
+      <div class="settings">
+        <label class="tooltip">Hardware Variant
+          <span class="tooltiptext">Hardware variant of this sensor.</span>
+        </label>
+        <labelRight id="hwVariant"></labelRight>
+      </div>
+      <div class="settings" style="display:none">
+        <label class="tooltip">Hardware Version
+          <span class="tooltiptext">Hardware version of this sensor.</span>
+        </label>
+        <labelRight id="hwVersion"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">Firmware Version
+          <span class="tooltiptext">Firmware version of this sensor.</span>
+        </label>
+        <labelRight id="fwVersion"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">Webserver Version
+          <span class="tooltiptext">Webserver version of this sensor.</span>
+        </label>
+        <labelRight id="webserverVersion"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">Uptime
+          <span class="tooltiptext">Time since the sensor has been started (hours:minutes).</span>
+        </label>
+        <labelRight id="uptime"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">Debug Enable
+          <span class="tooltiptext">Enables debug output on both the serial port and the console tab.</span>
+        </label>
+        <input type="checkbox" id="debugEn" name="debugEn">
+      </div>
+      <div class="settings">
+        <label class="tooltip">Serial Output
+          <span class="tooltiptext">Enables serial output to enable USB connectivity.</span>
+        </label>
+        <input type="checkbox" id="serialOut" name="serialOut">
+      </div>
+
+      <hr>
+
+      <div class="Production">
+        <h3>Battery</h3>
+        <div class="settings">
+          <label class="tooltip">Charging State
+            <span class="tooltiptext">Displays whether the battery is currently charging.</span>
+          </label>
+          <labelRight id="chargingState"></labelRight>
+        </div>
+        <div class="settings" style="display:none">
+          <label class="tooltip">USB Connected
+            <span class="tooltiptext">Displays whether USB currently is connected.</span>
+          </label>
+          <labelRight id="usbConnected"></labelRight>
+        </div>
+        
+        <div class="settings">
+          <label class="tooltip">Percentage
+            <span class="tooltiptext">Approximate battery charge remaining.</span>
+          </label>
+          <labelRight id="batteryPercentage"></labelRight>
+        </div>
+        <div class="settings" id="batteryTimeToEmpty_div">
+          <label class="tooltip"><div id="batteryTimeToEmpty_label">Time to empty</div>
+            <span class="tooltiptext">Approximate time until the battery is either full or empty (hours:minutes).</span>
+          </label>
+          <labelRight id="batteryTimeToEmpty"></labelRight>
+        </div>
+
+        <h4 class="expandable"><img src="right.png" class="expandableIcon" style="width:15px">Advanced</h4>
+        <div class="collapsed">
+          <div class="settings">
+            <label class="tooltip">Voltage
+              <span class="tooltiptext">Voltage of the battery.</span>
+            </label>
+            <labelRight id="batteryVoltage"></labelRight>
+          </div>
+          <div class="settings">
+            <label class="tooltip">Current
+              <span class="tooltiptext">Electric current into (positive) or out of (negative) the battery.</span>
+            </label>
+            <labelRight id="batteryCurrent"></labelRight>
+          </div>
+          <div class="settings">
+            <label class="tooltip">Capacity
+              <span class="tooltiptext">Capacity of the battery (current capacity/full capacity).</span>
+            </label>
+            <labelRight id="batteryCapacity"></labelRight>
+          </div>
+        </div>
+      </div>
+      
+      <hr>
+
+      <div class="settingsBtn">
+        <label class="tooltip">Update
+          <span class="tooltiptext">Update the firmware or webserver of the sensor. Will open a new tab.</span>
+        </label>
+        <input type="button" id="updateBtn" value="Update">
+      </div>
+
+      <div class="settingsBtn">
+        <label class="tooltip">Reset settings to default values
+          <span class="tooltiptext">Reset some or all of the sensor settings. Will open a pop-up for further selection.</span>
+        </label>
+        <input type="button" id="resetSettings" value="Reset">
+      </div>
+
+      <!-- Reset popup -->
+      <div id="resetPopup" class="modal">
+
+        <!-- Popup content -->
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <p>Resetting settings to their default values is irreversible.<br>
+            If you want to proceed, select which settings you want to reset and press 'Ok'</p>
+            <div class="settings">
+              <label>IR Configuration:</label>
+              <input type="checkbox" id="resetIr">
+            </div>
+            <p class="mpConfigNotes">Reset all settings related to the detection of IR points.</p>
+            <div class="settings">
+              <label>Battery:</label>
+              <input type="checkbox" id="resetBattery">
+            </div>
+            <p class="mpConfigNotes">Reset the battery configuration. Required if a new battery is inserted or if the battery values are very inaccurate.</p>
+            <div class="settings">
+              <label>Network Settings:</label>
+              <input type="checkbox" id="resetNetwork">
+            </div>
+            <p class="mpConfigNotes">Reset the network configuration. This will disconnect the sensor from the current WiFi network and requires this to be reconfigured.</p>
+          <input type="button" id="confirmResetSettings" value="Ok">
+        </div>
+
+      </div>
+
+      <div class="settingsBtn">
+        <label class="tooltip">Restart sensor
+          <span class="tooltiptext">Restarts the sensor.</span>
+        </label>
+        <input type="button" id="restart" value="Restart">
+      </div>
+      
+    </div>
+
+    <div id="Network" class="tabContent">
+      <h3>Network Status</h3>
+  
+      <div class="settings">
+        <label class="tooltip">Connection status
+          <span class="tooltiptext">Displays whether the sensor is connected to a WiFi access point.</span>
+        </label>
+        <labelRight id="connectionStatus"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">SSID
+          <span class="tooltiptext">SSID of the access point the sensor is configured to connect to.</span>
+        </label>
+        <labelRight id="ssid"></labelRight>
+      </div>
+      <div class="settings">
+        <label class="tooltip">IP Address
+          <span class="tooltiptext">IP Address of the sensor.</span>
+        </label>
+        <labelRight id="ipAddress"></labelRight>
+      </div>
+
+      <div class="settingsBtn">
+        <label class="tooltip">Name
+          <span class="tooltiptext">Name of the sensor.</span>
+        </label>
+        <input type="text" name="deviceName" id="deviceName" value="">
+        <input type="button" id="updateDeviceName" value="Update">
+      </div>
+
+      <hr>
+
+      <h3>Access Points</h3>
+      <div class="settingsBtn">
+        <label class="tooltip">Scan for access points
+          <span class="tooltiptext">Scan for nearby access points. This can take a few seconds.</span>
+        </label>
+        <input type="button" id="scanWiFi" value="Scan">
+      </div>
+
+      <select name="APs" default="" id="APs" size="6" style="width:100%">
+      </select>
+
+      <div class="settingsBtn">
+        <label class="tooltip">SSID
+          <span class="tooltiptext">SSID of the access point to connect to.</span>
+        </label>
+        <input type="text" name="SSID" id="SSID">
+      </div>
+
+      <div class="settingsBtn">
+        <label class="tooltip">Password
+          <span class="tooltiptext">Password of the access point to connect to.</span>
+        </label>
+        <input type="password" name="password" id="password">
+      </div>
+
+      <div class="settingsBtn">
+        <label class="tooltip"></label>
+        <input type="button" name="connect" id="connectWiFi" value="Connect">
+      </div>
+      
+      <br>
+
+      <hr>
+
+      <h3>Websocket</h3>
+      <div class="settingsBtn" style="display:none">
+        <label class="tooltip">Port
+          <span class="tooltiptext">Websocket port to use.</span>
+        </label>
+        <input type="text" name="wsPort" id="wsPort" value="">
+        <input type="button" id="updatePort" value="Update">
+      </div>
+
+      <div class="settings">
+        <label class="tooltip">Connected Clients
+          <span class="tooltiptext">Displays a list of connected clients.</span>
+        </label>
+        <labelRight id="wsClients"></labelRight>
+      </div>
+    </div>
+
+    <div id="Sensor" class="tabContent">
+
+      <h2 class="expandable"><img src="right.png" class="expandableIcon" style="width:25px">Coordinates</h2>
+      <div class="collapsed" id="coordinatesDiv">
+        <canvas id="stage" height="250" width="400"></canvas>
+      
+        <div class="form-group options">
+          <table style="float:right;text-align:center;width:100%">
+            <tr>
+              <th style="width:16.6%">
+                <label class="tooltip"> Point
+                  <span class="tooltiptext">Detected infrared point (formed by one or more pixels)</span>
+                </label>
+              </th>
+              <th style="width:16.6%"><label class="tooltip">X
+                <span class="tooltiptext">X-coordinate of point</span>
+                </label>
+              </th>
+              <th style="width:16.6%"><label class="tooltip">Y
+                <span class="tooltiptext">Y-coordinate of point</span>
+                </label>
+              </th> 
+              <th class="Production" style="width:16.6%"><label class="tooltip">Average Brightness
+                <span class="tooltiptext">Average brightness of all pixels within point</span>
+                </label>
+              </th>
+              <th style="width:16.6%"><label class="tooltip"><div class="Production">Maximum </div>Brightness
+                <span class="tooltiptext">Maximum brightness of point</span>
+                </label>
+              </th>
+              <th style="width:16.6%"><label class="tooltip">Area
+                <span class="tooltiptext">Area of point (in pixels)</span>
+                </label>
+              </th>
+            </tr>
+            <tr>
+              <td id="mpCoordsPoint-0" style="color:grey">0</td>
+              <td id="mpCoordsX-0" style="color:grey">0</td>
+              <td id="mpCoordsY-0" style="color:grey">0</td>
+              <td class="Production" id="mpCoordsAvgBrightness-0" style="color:grey">0</td>
+              <td id="mpCoordsMaxBrightness-0" style="color:grey">0</td>
+              <td id="mpCoordsArea-0" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="mpCoordsPoint-1" style="color:grey">1</td>
+              <td id="mpCoordsX-1" style="color:grey">0</td>
+              <td id="mpCoordsY-1" style="color:grey">0</td>
+              <td class="Production" id="mpCoordsAvgBrightness-1" style="color:grey">0</td>
+              <td id="mpCoordsMaxBrightness-1" style="color:grey">0</td>
+              <td id="mpCoordsArea-1" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="mpCoordsPoint-2" style="color:grey">2</td>
+              <td id="mpCoordsX-2" style="color:grey">0</td>
+              <td id="mpCoordsY-2" style="color:grey">0</td>
+              <td class="Production" id="mpCoordsAvgBrightness-2" style="color:grey">0</td>
+              <td id="mpCoordsMaxBrightness-2" style="color:grey">0</td>
+              <td id="mpCoordsArea-2" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="mpCoordsPoint-3" style="color:grey">3</td>
+              <td id="mpCoordsX-3" style="color:grey">0</td>
+              <td id="mpCoordsY-3" style="color:grey">0</td>
+              <td class="Production" id="mpCoordsAvgBrightness-3" style="color:grey">0</td>
+              <td id="mpCoordsMaxBrightness-3" style="color:grey">0</td>
+              <td id="mpCoordsArea-3" style="color:grey">0</td>
+            </tr>
+          </table>     
+        </div>
+
+        <BR CLEAR="right" />
+        <br>
+
+        <div class="form-group options Production">   
+          <table style="text-align:center;min-width:300px;max-width:300px">
+            <tr>
+                <th style="width:33%"><label class="tooltip">ID
+                  <span class="tooltiptext">Identification number of the base/pen</span>
+                  </label>
+                </th>
+                <th style="width:33%"><label class="tooltip">Command
+                  <span class="tooltiptext">Command sent by the base/pen</span>
+                  </label>
+                </th>
+                <th style="width:33%"><label class="tooltip">Battery
+                  <span class="tooltiptext">Approximate battery level or the base/pen</span>
+                  </label>
+                </th>
+            </tr>
+            <tr>
+                <td id="mpCoordsBaseId" style="color:grey">0</td>
+                <td id="mpCoordsBaseCmd" style="color:grey">0</td>
+                <td id="mpCoordsBaseBat" style="color:grey">0%</td>
+            </tr>
+          </table>     
+        </div>
+
+      </div>
+
+      <hr>
+
+      <h2>Settings</h2>
+      <h3 class="expandable"><img src="right.png" class="expandableIcon" style="width:20px">Exposure</h3> 
+      <div class="collapsed">
+        <!-- Auto Exposure -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpAutoExposure">Auto Exposure
+              <span class="tooltiptext">Attempts to automatically configure the exposure settings. Place a base or the pen in a corner of the screen, and make sure the base is active (infrared led on). The procedure can take a few seconds, the settings will automatically be updated after the procedure</span>
+            </label>
+            <div class="mpConfigFormBtn">
+                <button id="mpAutoExposure" type="button"><i></i>Auto Exposure</button>
+            </div>
+        </div>
+
+        <!-- Update Rate -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorUpdateRate">Update Rate
+              <span class="tooltiptext">The update rate of the sensor. Higher values increases responsiveness but can decrease performance on slower machines</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorUpdateRate" min=1 max=5 step=1>
+                <input type="number" id="mpSensorUpdateRateNumber">
+            </div>
+        </div>
+
+        <!-- Brightness -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorBrightness">Brightness
+              <span class="tooltiptext">Sets the brightness. Higher values will increase the brightness of points</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorBrightness" min=1 max=100 step=1>
+                <input type="number" id="mpSensorBrightnessNumber">
+            </div>
+        </div>
+
+        <!-- Minimum Brightness -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorMinBrightness">Minimum Brightness
+              <span class="tooltiptext">IR points with a brightness lower than this will be ignored</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorMinBrightness" min=10 max=255>
+                <input type="number" id="mpSensorMinBrightnessNumber">
+            </div>
+        </div>
+
+        <!-- Average -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorAverage">Average Count
+              <span class="tooltiptext">Sets the amount of measurements the sensor takes to average. Higher values decrease noise, but also decrease responsiveness</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorAverage" min=1 max=20>
+                <input type="number" id="mpSensorAverageNumber">
+            </div>
+        </div>
+
+        <hr>
+    </div>
+    
+    <h3 class="expandable"><img src="right.png" class="expandableIcon" style="width:15px">Transform</h3>  
+    <div class="collapsed">
+        <!-- Mirror X -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorMirrorX">Mirror X
+              <span class="tooltiptext">Mirrors the coordinates in the X-direction</span>
+            </label>
+            <div class="mpConfigFormVal">
+                <input type="checkbox" id="mpSensorMirrorX">
+            </div>
+        </div>
+
+        <!-- Mirror Y -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorMirrorY">Mirror Y
+              <span class="tooltiptext">Mirrors the coordinates in the Y-direction</span>
+            </label>
+            <div class="mpConfigFormVal">
+                <input type="checkbox" id="mpSensorMirrorY">
+            </div>
+        </div>
+
+        <!-- Rotate -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorRotate">Rotation
+              <span class="tooltiptext">Rotates the coordinates 90 degrees, by swapping the X and Y-axis</span>
+            </label>
+            <div class="mpConfigFormVal">
+                <input type="checkbox" id="mpSensorRotate">
+            </div>
+        </div>
+
+        <!-- X Offset -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorOffsetX">Offset X
+              <span class="tooltiptext">Shifts all coordinates on the X-axis by a set value to fix alignment issues</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorOffsetX" min=-100 max=100>
+                <input type="number" id="mpSensorOffsetXNumber">
+            </div>
+        </div>
+
+        <!-- Y Offset -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorOffsetY">Offset Y
+              <span class="tooltiptext">Shifts all coordinates on the Y-axis by a set value to fix alignment issues</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorOffsetY" min=-100 max=100>
+                <input type="number" id="mpSensorOffsetYNumber">
+            </div>
+        </div>
+
+        <!-- X Scale -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorScaleX">Scale X
+              <span class="tooltiptext">Scales all coordinates on the X-axis by a set value to fix alignment issues</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorScaleX" min=0 max=2 step=0.01>
+                <input type="number" id="mpSensorScaleXNumber">
+            </div>
+        </div>
+
+        <!-- Y Scale -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorScaleY">Scale Y
+              <span class="tooltiptext">Scales all coordinates on the Y-axis by a set value to fix alignment issues</span>
+            </label>
+            <div class="mpConfigFormValRange">
+                <input type="range" id="mpSensorScaleY" min=0 max=2 step=0.01>
+                <input type="number" id="mpSensorScaleYNumber">
+            </div>
+        </div>
+
+        <hr>
+    </div>
+    
+    <h3 class="expandable"><img src="right.png" class="expandableIcon" style="width:15px">Calibration</h3>  
+    <div class="collapsed">
+        <!-- Calibration Enabled -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorCalEn">Calibration Enabled
+              <span class="tooltiptext">Enables the calibration of the sensor. Sensor must be calibrated first</span>
+            </label>
+            <div class="mpConfigFormVal">
+                <input type="checkbox" id="mpSensorCalEn">
+            </div>
+        </div>
+
+        <!-- Offset Enabled -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpSensorOffsetEn">Calibration Offset Enabled
+              <span class="tooltiptext">Enables the calibration offset, allowing you to configure custom calibration points. Sensor must be offset calibrated first</span>
+            </label>
+            <div class="mpConfigFormVal">
+                <input type="checkbox" id="mpSensorOffsetEn">
+            </div>
+        </div>
+
+        <!-- Calibrate -->
+        <div class="mpConfigFormElements">
+            <label class="tooltip" for="mpCalMethod">Calibrate
+              <span class="tooltiptext">Start the calibration procedure</span>
+            </label>
+            <div class="mpConfigFormBtn">
+                <select id="mpCalMethod">
+                    <option value="SinglePoint">Single-Point</option>
+                    <option value="MultiPoint">Multi-Point</option>
+                    <option value="Offset">Offset</option>
+                </select> 
+                <button id="mpConfigPerformCal" type="button"><i></i>Calibrate</button>
+            </div>
+        </div>
+
+        <hr>
+    </div>
+    </div>
+
+    <div id="Console" class="tabContent">
+      <h3>Debug Console</h3>
+      <p class="mpConfigNotes">Send and receive commands from the sensor. Debugging must be enabled in the 'Status' tab.</p>
+      <br>
+      <div class="consoleRx" id="consoleRx">
+        
+      </div>
+      <div class="consoleTx" id="consoleTx">
+        <input type="text" id="consoleTxText" value="" placeholder="Type message to send here">
+        <input type="button" id="consoleSend" value="Send">
+      </div>
+      <div class="consoleTx" id="consoleTx2">
+        <input type="button" id="consoleClear" value="Clear">
+        <input type="checkbox" id="consoleAutoscroll" checked>
+        <label>Autoscroll</label>
+        <input type="checkbox" id="consoleTimeStamp">
+        <label>Show timestamp</label>
+      </div>
+    </div>
+
+
+    <div class="footer">   
+      <a class="hyperlink" href="https://github.com/MaterialFoundry/MaterialPlane" target="_blank">GitHub</a> |
+      <a class="hyperlink" href="https://github.com/MaterialFoundry/MaterialPlane/wiki" target="_blank">Wiki</a> |
+      <a class="hyperlink" href="https://github.com/MaterialFoundry/MaterialPlane_Sensor/releases" target="_blank">Releases</a> |
+      <a class="hyperlink" href="https://discord.gg/3hd4G6TkmA" target="_blank">Discord</a> |
+      <a class="hyperlink" href="https://www.patreon.com/materialfoundry" target="_blank">Patreon</a>
+    </div>
+
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    
+   </script>
+</body>
+</html>
