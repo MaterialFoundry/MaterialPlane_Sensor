@@ -13,7 +13,7 @@ bool initInProgress = false;
 CalibrationModes calMode = CAL_MODE_SINGLE;
 CalibrationStatus calStatus = CAL_INACTIVE;
 AutoExposureStatus autoExpStatus = AUTOEXP_INACTIVE;
-float cal_currentCoordinates[4][2], cal_storedCoordinates[4][2]; 
+float cal_currentCoordinates[4][2], cal_storedCoordinates[4][2], offset_storedCoordinates[4][2], offsetPoints[4][2]; 
 uint8_t cal_count, avg_old, brightnessOld, minBrightnessOld, autoExposeBrightness, autoExposeMinBrightness = 0;                          
 bool calRunning, mirrorX_old, mirrorY_old, rotation_old, calibration_old, calibrationOffset_old, calSuccess, autoExpRunning, autoExpSuccess = false;
 int8_t offsetX_old, offsetY_old, calSource = 0;
@@ -51,6 +51,14 @@ void clearIrPreferences() {
   preferences.putFloat("calY_1", 0);
   preferences.putFloat("calY_2", 0);
   preferences.putFloat("calY_3", 4095);
+  preferences.putFloat("offsetX_0", 4095);
+  preferences.putFloat("offsetX_1", 4095);
+  preferences.putFloat("offsetX_2", 0);
+  preferences.putFloat("offsetX_3", 0);
+  preferences.putFloat("offsetY_0", 4095);
+  preferences.putFloat("offsetY_1", 0);
+  preferences.putFloat("offsetY_2", 0);
+  preferences.putFloat("offsetY_3", 4095);
   preferences.end();
   initializeIrTracker();
 }
@@ -105,16 +113,18 @@ void initializeIrTracker() {
     cal_storedCoordinates[1][1] = preferences.getFloat("calY_1", 0);
     cal_storedCoordinates[2][1] = preferences.getFloat("calY_2", 0);
     cal_storedCoordinates[3][1] = preferences.getFloat("calY_3", 4095);
+
+    offsetPoints[0][0] = preferences.getFloat("offsetX_0", 4095);
+    offsetPoints[1][0] = preferences.getFloat("offsetX_1", 4095);
+    offsetPoints[2][0] = preferences.getFloat("offsetX_2", 0);
+    offsetPoints[3][0] = preferences.getFloat("offsetX_3", 0);
+    offsetPoints[0][1] = preferences.getFloat("offsetY_0", 4095);
+    offsetPoints[1][1] = preferences.getFloat("offsetY_1", 0);
+    offsetPoints[2][1] = preferences.getFloat("offsetY_2", 0);
+    offsetPoints[3][1] = preferences.getFloat("offsetY_3", 4095);
     preferences.end();
 
-    /* Get calibration values from preferences */
-    for (int i = 0; i < 4; i++) {
-      cal.setCalibrationPoint(i, 0, cal_storedCoordinates[i][0]);
-      cal.setCalibrationPoint(i, 1, cal_storedCoordinates[i][1]);
-    }
-    
-    /* Order calibration values and calculate homography matrix */
-    cal.orderCalibrationArray();
+    setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
 
     /* Configure all ir points */
     for (int i=0; i<OBJECT_NUM; i++) {
@@ -414,8 +424,9 @@ void setCalibration(bool val, bool save) {
 
 void setOffsetCalibration(bool val, bool save) {
   sensorConfig.calibrationOffsetEnable = val;
-  for (int i=0; i<OBJECT_NUM; i++)
-    irPoints[i].setOffsetCalibration(val);
+  setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
+  //for (int i=0; i<OBJECT_NUM; i++)
+    //irPoints[i].setOffsetCalibration(val);
   debug("SETT - CALOEN - " + (String)val);
 
   /* Store value to preferences, if necessary */
@@ -635,8 +646,15 @@ void getCal() {
     for (int i = 0; i < 4; i++) {
       cal_currentCoordinates[i][0] = 0;
       cal_currentCoordinates[i][1] = 0;
-      cal_storedCoordinates[i][0] = 0;
-      cal_storedCoordinates[i][1] = 0;
+      if (calMode == CAL_MODE_SINGLE) {
+        cal_storedCoordinates[i][0] = 0;
+        cal_storedCoordinates[i][1] = 0;
+      }
+      else if (calMode == CAL_MODE_OFFSET) {
+        offset_storedCoordinates[i][0] = 0;
+        offset_storedCoordinates[i][1] = 0;
+      }
+      
     }
 
     /* Store old values to recover after calibration is complete */
@@ -669,12 +687,24 @@ void getCal() {
 
   /* Gather ir data */
   else if (calStatus == CAL_ACTIVE) {
+    String pointMsg = "{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"state\":\"newPoint\",\"points\":[";
+    uint8_t detectedPoints = 0;
+    
     for (int i = 0; i < 4; i++) {
       /* If ir points are valid, store them in the calibration arrays */
       if (irPoints[i].valid && irPoints[i].x != -9999 && irPoints[i].y != -9999) {
         cal_currentCoordinates[i][0] = irPoints[i].x;
         cal_currentCoordinates[i][1] = irPoints[i].y;
+        if (detectedPoints > 0) pointMsg += ',';
+        pointMsg += "{\"point\":" + (String)detectedPoints + ",\"x\":" + (String)irPoints[i].x + ",\"y\":" + (String)irPoints[i].y + "}";
+        detectedPoints++;
       }
+      
+    }
+
+    if (calMode == CAL_MODE_MULTI) {
+      pointMsg += "]}";
+      broadcastWs(pointMsg);
     }
   }
 
@@ -686,8 +716,15 @@ void getCal() {
       calStatus = CAL_ACTIVE;
       
       /* Store the previously recorded points */
-      cal_storedCoordinates[cal_count][0] = cal_currentCoordinates[0][0];
-      cal_storedCoordinates[cal_count][1] = cal_currentCoordinates[0][1];
+      if (calMode == CAL_MODE_SINGLE) {
+        cal_storedCoordinates[cal_count][0] = cal_currentCoordinates[0][0];
+        cal_storedCoordinates[cal_count][1] = cal_currentCoordinates[0][1];
+      }
+      else if (calMode == CAL_MODE_OFFSET) {
+        offset_storedCoordinates[cal_count][0] = cal_currentCoordinates[0][0];
+        offset_storedCoordinates[cal_count][1] = cal_currentCoordinates[0][1];
+      }
+      
 
       /* prepare data */
       msg = "{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"state\":\"newPoint\",\"point\":" + (String)cal_count + ",\"x\":" + (String)cal_currentCoordinates[0][0] + ",\"y\":" + (String)cal_currentCoordinates[0][1] + "}";
@@ -696,8 +733,14 @@ void getCal() {
       cal_count++;
     }
     else {
-      //multipoint calibration
+      /* Store the previously recorded points */
+      for (int i=0; i<4; i++) {
+        cal_storedCoordinates[i][0] = cal_currentCoordinates[i][0];
+        cal_storedCoordinates[i][1] = cal_currentCoordinates[i][1];
+      }
+      cal_count = 4;
     }
+
     broadcastWs(msg);
     debug("CAL - NEXT - " + (String)cal_currentCoordinates[0][0] + ", " + (String)cal_currentCoordinates[0][1]);
 
@@ -705,20 +748,28 @@ void getCal() {
     if (cal_count == 4) {
       broadcastWs("{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"state\":\"done\"}");
       debug("CAL - DONE");
+      calStatus = CAL_STOP;
 
-      if (calMode == CAL_MODE_OFFSET) {
-        
-      }
-      else {
+      if (calMode != CAL_MODE_OFFSET) {
         /* Set the calibration values and calculate new homography matrix */
+
         for (int i = 0; i < 4; i++) {
           cal.setCalibrationPoint(i, 0, cal_storedCoordinates[i][0]);
           cal.setCalibrationPoint(i, 1, cal_storedCoordinates[i][1]);
+          
         }
+        Serial0.println("CAL");
         cal.orderCalibrationArray();
+
+        for (int i=0; i<4; i++) {
+          cal_storedCoordinates[i][0] = cal.getCalibrationPoint(i, 0);
+          cal_storedCoordinates[i][1] = cal.getCalibrationPoint(i, 1);
+        }
         for (int i=0; i<OBJECT_NUM; i++) {
           irPoints[i].setCalObjects(cal, offsetCal);
         }
+
+        setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
 
         /* Store the calibration points */
         preferences.begin("irTracker", false);
@@ -730,6 +781,39 @@ void getCal() {
         preferences.putFloat("calY_1", cal_storedCoordinates[1][1]);
         preferences.putFloat("calY_2", cal_storedCoordinates[2][1]);
         preferences.putFloat("calY_3", cal_storedCoordinates[3][1]);
+        preferences.end();
+        calSuccess = true;
+      }
+      else {
+        /* Set the calibration values and calculate new homography matrix */
+        for (int i = 0; i < 4; i++) {
+          offsetCal.setCalibrationPoint(i, 0, offset_storedCoordinates[i][0]);
+          offsetCal.setCalibrationPoint(i, 1, offset_storedCoordinates[i][1]);
+        }
+        offsetCal.orderCalibrationArray(false);
+  
+        for (int i=0; i<4; i++) {
+          offsetPoints[i][0] = offsetCal.getCalibrationPoint(i, 0) - cal_storedCoordinates[i][0];
+          offsetPoints[i][1] = offsetCal.getCalibrationPoint(i, 1) - cal_storedCoordinates[i][1];
+        }
+
+        setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
+        /*
+        for (int i=0; i<OBJECT_NUM; i++) {
+          irPoints[i].setCalObjects(cal, offsetCal);
+        }
+        */
+
+        /* Store the calibration points */
+        preferences.begin("irTracker", false);
+        preferences.putFloat("offsetX_0", offsetPoints[0][0]);
+        preferences.putFloat("offsetX_1", offsetPoints[1][0]);
+        preferences.putFloat("offsetX_2", offsetPoints[2][0]);
+        preferences.putFloat("offsetX_3", offsetPoints[3][0]);
+        preferences.putFloat("offsetY_0", offsetPoints[0][1]);
+        preferences.putFloat("offsetY_1", offsetPoints[1][1]);
+        preferences.putFloat("offsetY_2", offsetPoints[2][1]);
+        preferences.putFloat("offsetY_3", offsetPoints[3][1]);
         preferences.end();
         calSuccess = true;
       }
@@ -746,7 +830,7 @@ void getCal() {
   /* Stop calibration */
   if (calStatus == CAL_STOP) {
     calStatus = CAL_INACTIVE;
-    
+
     /* Configure sensor to normal settings */
     setAverage(avg_old, false);
     setMirrorX(mirrorX_old, false);
@@ -775,6 +859,7 @@ void getCal() {
 
 /* Go to next calibration point */
 void nextCalibrationPoint() {
+  //Serial0.println("Next calibration point");
   if (calStatus != CAL_ACTIVE) return;
   calStatus = CAL_NEXT;
 }
@@ -789,4 +874,25 @@ void cancelCalibration() {
 void cancelCalibrationOnDisconnect(uint8_t source) {
   if (calStatus != CAL_ACTIVE || source != calSource) return;
   debug("CAL - CANCELLED ON DISCONNECT");
+}
+
+void setCalibration(float calPoints[][2], float offsetPoints[][2], bool offsetEn) {
+
+  if (offsetEn) {
+    for (int i = 0; i < 4; i++) {
+      cal.setCalibrationPoint(i, 0, calPoints[i][0] + offsetPoints[i][0]);
+      cal.setCalibrationPoint(i, 1, calPoints[i][1] + offsetPoints[i][1]);
+    }
+  }
+  else {
+    for (int i = 0; i < 4; i++) {
+      cal.setCalibrationPoint(i, 0, calPoints[i][0]);
+      cal.setCalibrationPoint(i, 1, calPoints[i][1]);
+    }
+  }
+  
+  cal.calculateHomographyMatrix();
+  for (int i=0; i<OBJECT_NUM; i++) {
+    irPoints[i].setCalObjects(cal, offsetCal);
+  }
 }

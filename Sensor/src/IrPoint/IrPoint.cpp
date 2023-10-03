@@ -38,12 +38,22 @@ bool IrPoint::updateData() {
 
     x = (float)_xAverage.getAverage(xRaw*16)/16;
     y = (float)_yAverage.getAverage(yRaw*16)/16;
+   
     
     if (_calibration) {
         _cal.calculateCoordinates(x, y);
         x = _cal.getX();
         y = _cal.getY();
     }
+    /*
+    if (_offsetCalibration) {
+        _offsetCal.calculateCoordinates(x, y);
+        x = _offsetCal.getX();
+        y = _offsetCal.getY();
+    }
+    */
+    
+    
     
     float xTemp, yTemp;
 
@@ -66,8 +76,8 @@ bool IrPoint::updateData() {
     yTemp = (yTemp-2048)*_scaleY+2048;
 
     //Make sure coordinates are within limits
-    if (xTemp < 0) xTemp = 0;
-    if (yTemp < 0) yTemp = 0;
+    //if (xTemp < 0) xTemp = 0;
+    //if (yTemp < 0) yTemp = 0;
     x = xTemp;
     y = yTemp;
     return true;

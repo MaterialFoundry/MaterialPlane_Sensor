@@ -44,6 +44,7 @@ TaskHandle_t pingTask;
 TaskHandle_t irSensorTask;
 TaskHandle_t activityMonitorTask;
 TaskHandle_t rmtTask;
+TaskHandle_t comTask;
 
 /*
  * Structs
@@ -87,15 +88,34 @@ void setup() {
     delay(2000);        /* Delay to allow native USB port to initialize */
   #endif
   initialization();     /* Initialize everything */
+
+  xTaskCreatePinnedToCore(
+      comTaskLoop,
+      "comTask",
+      COM_STACK_SIZE,
+      NULL,
+      2,
+      &comTask,
+      1
+    );
 }
 
 void loop() {
-  batteryManagementLoop();
-  ledLoop();
-  communicationLoop();
-  websocketLoop();
-  serialLoop();
-  rmtLoop();
+  
+  
+}
+
+void comTaskLoop(void * parameter) {
+  delay(1000);
+  while(1) {
+    batteryManagementLoop();
+    ledLoop();
+    communicationLoop();
+    websocketLoop();
+    serialLoop();
+    rmtLoop();
+    delay(10);
+  }
 }
 
 /**

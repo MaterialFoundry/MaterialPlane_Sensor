@@ -21,7 +21,7 @@
             double getY();
             void setCalibrationPoint(int,int,float);
             double getCalibrationPoint(int, int);
-            void orderCalibrationArray();
+            void orderCalibrationArray(bool calculateHomography = true);
 
         private:
             uint8_t findMax(double ARRAY[]);

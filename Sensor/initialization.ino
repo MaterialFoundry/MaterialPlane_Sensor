@@ -17,6 +17,7 @@ void clearPreferences() {
  * Initialize preferences (for general settings)
  */
 void initializePreferences() {
+  nvs_flash_init();
   preferences.begin("config", true);
   settings.debug = preferences.getBool("debug",settings.debug);
   settings.serialMode = static_cast<SERIAL_MODE>(preferences.getUChar("serialMode",settings.serialMode));

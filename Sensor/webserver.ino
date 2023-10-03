@@ -27,6 +27,11 @@ void printWebserverStatus() {
 
 void initializeWebserver() {
   Serial.printf("------------------------------------\nInitializing webserver\n\n");
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.printf("Failed: No WiFi\n\n");
+    return;
+  }
   
   SPIFFS.begin(); 
 

@@ -31,7 +31,7 @@ void communicationLoop() {
     updateTimer = millis();
     transmitCoordinates();
   }
-  delay(1);
+  //delay(1);
 }
 
 /**
@@ -195,8 +195,8 @@ uint8_t baseBatToPercentage(uint8_t bat) {
  * Analyze incoming json data and perform relevant action
  */
 void analyzeJson(char* msg, uint8_t source) {
-  Serial0.print("Analyze JSON: ");
-  Serial0.println(msg);
+  //Serial0.print("Analyze JSON: ");
+  //Serial0.println(msg);
   
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, msg);
@@ -267,7 +267,7 @@ uint8_t serialLoop() {
  * Analyze incoming string message and perform relevant action
  */
 uint8_t analyzeMessage(String msg) {
-  Serial0.println("Received message: " + msg);
+  //Serial0.println("Received message: " + msg);
   
   /* In case of JSON string, return */
   if (msg[0] == '{') {
@@ -326,9 +326,9 @@ uint8_t analyzeMessage(String msg) {
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_PSK) authMode = "WPA2-PSK";
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_WPA2_PSK) authMode = "WPA-WPA2-PSK";
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_ENTERPRISE) authMode = "WPA2-Enterprise";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK";
         else authMode = "Unknown";
         msg += (String)(i + 1) + "\t" + (String)WiFi.SSID(i) + "\t\t\t" + (String)WiFi.RSSI(i) + "dBm\t" + authMode + '\n';
       }
@@ -390,7 +390,7 @@ void debug(String msg) {
 void setDebug(bool en) {
   debug("SETT - DEBUG - " + (String)en);
   settings.debug = en;
-  preferences.begin("config", true);
+  preferences.begin("config", false);
   preferences.putBool("debug",en);
   preferences.end();
 }
@@ -398,7 +398,7 @@ void setDebug(bool en) {
 void setSerialMode(bool en) {
   debug("SETT - SERIAL - " + (String)en);
   settings.serialMode = en ? SERIAL_DEFAULT : SERIAL_OFF;
-  preferences.begin("config", true);
+  preferences.begin("config", false);
   preferences.putUChar("serialMode",settings.serialMode);
   preferences.end();
 }

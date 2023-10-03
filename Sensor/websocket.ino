@@ -35,7 +35,6 @@ void initializeWebsocket() {
   
   webSocketServer.begin();
   webSocketServer.onEvent(webSocketServerEvent);
-  //webSocketServer.enableHeartbeat(PING_PERIOD, 5000, 10);
   printWebsocketStatus();
 }
 
