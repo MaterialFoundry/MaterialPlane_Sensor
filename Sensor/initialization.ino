@@ -17,6 +17,7 @@ void clearPreferences() {
  * Initialize preferences (for general settings)
  */
 void initializePreferences() {
+  nvs_flash_init();
   preferences.begin("config", true);
   settings.debug = preferences.getBool("debug",settings.debug);
   settings.serialMode = static_cast<SERIAL_MODE>(preferences.getUChar("serialMode",settings.serialMode));
@@ -34,12 +35,17 @@ void printInitStatus() {
  * Main initialization function from which everything is initialized
  */
 void initialization() {
-  pinMode(TEST_PIN, INPUT_PULLUP);
-  if (!digitalRead(TEST_PIN)) startTest();
+  
+  #if defined(PRODUCTION_HW)
+    Serial0.begin(115200);
+    pinMode(TEST_PIN, INPUT_PULLUP);
+    if (!digitalRead(TEST_PIN)) startTest();
+    Serial0.printf("Starting");
+  #endif
+  
   Serial.begin(115200);
   Serial.printf("Starting initialization\n");
-  Serial0.begin(115200);
-  Serial0.printf("Starting");
+  
   printInitStatus();
   initializeUSB();
   initializeLeds();
@@ -47,10 +53,16 @@ void initialization() {
   #ifdef BATTERY_LED
     /* Switch green LED off */
     ledcWrite(BATTERY_LED_GREEN, 0);
+    #ifdef CONNECTION_LED
+      ledcWrite(CONNECTION_LED_GREEN, 0);
+    #endif
   
     /* Fade-in red LED */
     for (int i=0; i<LED_R_MAX; i++) {
       ledcWrite(BATTERY_LED_RED, i);
+      #ifdef CONNECTION_LED
+        ledcWrite(CONNECTION_LED_RED, i);
+      #endif
       delay(10);
     }
   #endif

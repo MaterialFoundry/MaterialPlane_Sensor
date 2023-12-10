@@ -1,13 +1,13 @@
-Reg (dec)       Reg (hex)       Def val (dec)   Def val (hex)   Expected function
+Reg (dec)       Reg (hex)       Def val (dec)   Def val (hex)   Function
 0				0				2				2               
 1				1				0				0
 2				2				0				0
 3				3				113				71
 4				4				1				1
 5				5				0				0
-6				6				90				5A              Maximum intensity threshold
-7				7				8				8               ? Some kind of scaling in both x and y at high values (e.g. 100)?
-8				8				190				BE              Brightness (inv, min 10), also decreases frame rate at lower values?
+6				6				90				5A              Maximum brightness threshold
+7				7				8				8               ? Some kind of scaling in both x and y at bit 5
+8				8				190				BE              Brightness/gain (inv), also decreases frame rate at lower values, maybe exposure or gain?
 9				9				40				28              
 10				A				80				50              
 11				B				32				20
@@ -15,42 +15,42 @@ Reg (dec)       Reg (hex)       Def val (dec)   Def val (hex)   Expected functio
 13				D				1				1               Enable IR pixel clock on 0x06
 14				E				1				1               ? Stops working if val > 2
 15				F				127				7F
-16				10				4				4
+16				10				4				4               Max IR points
 17				11				0				0
-18				12				128				80              horizontal resolution (8xval)
-19				13				96				60              vertical resolution (8xval)
+18				12				128				80              Horizontal resolution
+19				13				96				60              Vertical resolution
 20				14				16				10
 21				15				0				0
 22				16				0				0
-23				17				10				A               ? Something brightness related, higher increases brightness (0-12)
+23				17				10				A              ? Something brightness related, higher increases brightness, max value == reg 0x08
 24				18				52				34
 25				19				0				0
-26				1A				180				B4              Maximum brightness (reg 0x08)
-27				1B				3				3               Minimum intensity threshold
+26				1A				180				B4             Maximum allowable brightness/gain value (must be less than reg 0x08)
+27				1B				3				3              Minimum brightness threshold
 28				1C				100				64
 29				1D				66				42
 30				1E				0				0
 31				1F				7				7
 32				20				0				0
-33				21				2				2               Output mode
+33				21				2				2               
 34				22				103				67
 35				23				16				10
 36				24				220				DC
 37				25				240				F0
-38				26				4				4               ? MSB Some kind of x offset or scaling
-39				27				0				0               ? LSB Some kind of x offset or scaling
-40				28				3				3               ? MSB Some kind of y offset or scaling
-41				29				0				0               ? LSB Some kind of y offset or scaling
+38				26				4				4              ? MSB Some kind of x offset or scaling
+39				27				0				0              ? LSB Some kind of x offset or scaling
+40				28				3				3              ? MSB Some kind of y offset or scaling
+41				29				0				0              ? LSB Some kind of y offset or scaling
 42				2A				0				0
 43				2B				50				32
 44				2C				18				12
 45				2D				4				4
 46				2E				20				14
 47				2F				0				0
-48				30				1				1               ? Write 0x08 to apply settings
+48				30				1				1              Config register ? Write 0x08 to apply settings
 49				31				0				0
 50				32				0				0
-51				33				0				0
+51				33				0				0              Output mode
 52				34				0				0
 53				35				0				0
 54				36				0				0               

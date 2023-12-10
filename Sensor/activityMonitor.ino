@@ -29,13 +29,15 @@ void activityMonitor(void * parameter) {
        setIdle = true;
     else
       idle = false;
-    
-    /* If sensor is idle, or if maxreset timeout has passed => reset ir sensor to prevent it from locking up */
-    if ((idle && timerToSeconds(irTrackerResetTimer) >= IRTRACKER_RESET_TIMEOUT) || timerToSeconds(irTrackerResetTimer) >= IRTRACKER_MAXRESET_TIMEOUT) {
-      irTrackerResetTimer = millis();
-      debug("STATUS - IR - Safety Reset");
-      initializeIrTracker();
-    }
+
+    #ifdef PAJ_SENSOR
+      /* If sensor is idle, or if maxreset timeout has passed => reset ir sensor to prevent it from locking up */
+      if ((idle && timerToSeconds(irTrackerResetTimer) >= IRTRACKER_RESET_TIMEOUT) || timerToSeconds(irTrackerResetTimer) >= IRTRACKER_MAXRESET_TIMEOUT) {
+        irTrackerResetTimer = millis();
+        debug("STATUS - IR - Safety Reset");
+        initializeIrTracker();
+      }
+    #endif
 
     /* if setIdle is true and sensor is currently not idle, reduce the update rate and CPU speed to reduce power consumption */
     if (setIdle && !idle) {
@@ -63,6 +65,10 @@ void initializeActivityMonitor() {
     /* If no valid min cpu freq is found, stick to idle freq (80MHz) */
     if (i == 2) minCpuFreq = CPU_FREQ_IDLE;
   }
+  Serial.print("Xtal freq: ");
+  Serial.println(freq);
+  Serial.print("Min CPU freq: ");
+  Serial.println(minCpuFreq);
 
   /* Create the activity monitor task */
   xTaskCreatePinnedToCore(
@@ -80,27 +86,29 @@ void initializeActivityMonitor() {
  * Set the power mode
  */
 void setPowerMode(PowerModes pMode) {
-  if (pMode == powerMode) return;
-  String msg = "";
-  if (pMode == POWER_ACTIVE) {
-    setCpuFrequencyMhz(CPU_FREQ_MAX);
-    msg = "STATUS - CPU - Active - " + (String)CPU_FREQ_MAX + " MHz";
-  }
-  else if (pMode == POWER_IDLE) {
-    setCpuFrequencyMhz(CPU_FREQ_IDLE);
-    msg = "STATUS - CPU - Idle - " + (String)CPU_FREQ_IDLE + " MHz";
-  }
-  else if (pMode == POWER_SAVE) {
-    setCpuFrequencyMhz(minCpuFreq);
-    msg = "STATUS - CPU - Power Saving - " + (String)minCpuFreq + " MHz";
-    //disable everything
-  }
-  else if (pMode == POWER_SUPERSAVE) {
-    setCpuFrequencyMhz(2);
-    msg = "STATUS - CPU - Power Super Saving - " + (String)minCpuFreq + " MHz";
-  }
-  debug(msg);
-  powerMode = pMode;
+    if (pMode == powerMode) return;
+    #if defined(PRODUCTION_HW)
+      String msg = "";
+      if (pMode == POWER_ACTIVE) {
+        setCpuFrequencyMhz(CPU_FREQ_MAX);
+        msg = "STATUS - CPU - Active - " + (String)CPU_FREQ_MAX + " MHz";
+      }
+      else if (pMode == POWER_IDLE) {
+        setCpuFrequencyMhz(CPU_FREQ_IDLE);
+        msg = "STATUS - CPU - Idle - " + (String)CPU_FREQ_IDLE + " MHz";
+      }
+      else if (pMode == POWER_SAVE) {
+        setCpuFrequencyMhz(minCpuFreq);
+        msg = "STATUS - CPU - Power Saving - " + (String)minCpuFreq + " MHz";
+        //disable everything
+      }
+      else if (pMode == POWER_SUPERSAVE) {
+        setCpuFrequencyMhz(2);
+        msg = "STATUS - CPU - Power Super Saving - " + (String)minCpuFreq + " MHz";
+      }
+      debug(msg);
+    #endif
+    powerMode = pMode;
 }
 
 /**

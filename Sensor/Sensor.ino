@@ -7,6 +7,7 @@
 #include <Preferences.h>
 #include <WiFi.h>
 #include "src/ArduinoJson-6.x/ArduinoJson-v6.20.0.h"
+#include "src/RunningAverage/RunningAverage.h"
 
 #ifdef PAJ_SENSOR
   #include "src/PAJ7025R3/PAJ7025R3.h"
@@ -30,6 +31,18 @@
   MCP73871_STAT chargingStatus;
 #endif
 
+#ifdef TINYPICO_BATTERY_MONITOR
+  #include "src/tinypico-helper/src/TinyPICO.h"
+  TinyPICO tp = TinyPICO();
+  uint16_t tpVoltage = 0;
+  bool tpUsbActive = false;
+  bool tpUsbActiveOld = false;
+  String chargingStatus = "Not Charging";
+  RunningAverage tpAverageVoltage;
+  uint8_t tpChargeSum = 0;
+  uint8_t tpBatteryPercentage = 0;
+#endif
+
 #ifdef SERIAL_DEBUG
   #define Serial Serial0
 #endif
@@ -44,6 +57,7 @@ TaskHandle_t pingTask;
 TaskHandle_t irSensorTask;
 TaskHandle_t activityMonitorTask;
 TaskHandle_t rmtTask;
+TaskHandle_t comTask;
 
 /*
  * Structs
@@ -87,15 +101,33 @@ void setup() {
     delay(2000);        /* Delay to allow native USB port to initialize */
   #endif
   initialization();     /* Initialize everything */
+
+  xTaskCreatePinnedToCore(
+      comTaskLoop,
+      "comTask",
+      COM_STACK_SIZE,
+      NULL,
+      2,
+      &comTask,
+      1
+    );
 }
 
 void loop() {
-  batteryManagementLoop();
-  ledLoop();
-  communicationLoop();
-  websocketLoop();
-  serialLoop();
-  rmtLoop();
+  
+}
+
+void comTaskLoop(void * parameter) {
+  delay(1000);
+  while(1) {
+    batteryManagementLoop();
+    ledLoop();
+    communicationLoop();
+    websocketLoop();
+    serialLoop();
+    rmtLoop();
+    delay(10);
+  }
 }
 
 /**

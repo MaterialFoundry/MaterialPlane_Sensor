@@ -95,7 +95,7 @@ double homography::getCalibrationPoint(int point, int axis){
     return _calArray[axis][point];
 }
 
-void homography::orderCalibrationArray(){
+void homography::orderCalibrationArray(bool calculateHomography){
     double calTempX[4], calTempY[4];
 
     //Store the calibration values in temporary arrays
@@ -137,7 +137,7 @@ void homography::orderCalibrationArray(){
     }
 
     //Get the homography array
-    calculateHomographyMatrix();
+    if (calculateHomography) calculateHomographyMatrix();
 }
 
 

@@ -24,14 +24,14 @@ void pingLoop(void * parameter) {
 void communicationLoop() {
   if (millis() - statusTimer >= STATUS_PERIOD) {
     statusTimer = millis();
-    transmitStatus();
+    transmitStatus(false);
   }
   
   if (millis() - updateTimer >= framePeriodLUT[sensorConfig.updateRate]) {
     updateTimer = millis();
     transmitCoordinates();
   }
-  delay(1);
+  //delay(1);
 }
 
 /**
@@ -53,7 +53,7 @@ void initializeCommunication() {
 /**
  * Transmit status over websocket and/or serial
  */
-void transmitStatus() {
+void transmitStatus(bool forceTransmit) {
   StaticJsonDocument<JSON_OBJECT_SIZE(100)> statusDoc;
   statusDoc["status"] = "update";
   statusDoc["firmwareVersion"] = FIRMWARE_VERSION;
@@ -125,11 +125,19 @@ void transmitStatus() {
     statusDoc["power"] = power;
   #endif
 
+  #ifdef TINYPICO_BATTERY_MONITOR
+    StaticJsonDocument<JSON_OBJECT_SIZE(50)> power;
+    power["percentage"] = tpBatteryPercentage;
+    power["voltage"] = tpVoltage;
+    power["chargerStatus"] = chargingStatus;
+    statusDoc["power"] = power;
+  #endif
+
   char output[1000];
   
   serializeJson(statusDoc, output);
   broadcastWs(output);
-  if (settings.debug) Serial.println(output);
+  if (settings.debug || forceTransmit) Serial.println(output);
 }
 
 /**
@@ -195,8 +203,8 @@ uint8_t baseBatToPercentage(uint8_t bat) {
  * Analyze incoming json data and perform relevant action
  */
 void analyzeJson(char* msg, uint8_t source) {
-  Serial0.print("Analyze JSON: ");
-  Serial0.println(msg);
+  //Serial0.print("Analyze JSON: ");
+  //Serial0.println(msg);
   
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, msg);
@@ -227,7 +235,7 @@ void analyzeJson(char* msg, uint8_t source) {
     else if (doc["state"] == "next") nextCalibrationPoint();
     else if (doc["state"] == "cancel") cancelCalibration();
   }
-  if (doc["event"] == "getStatus") transmitStatus();
+  if (doc["event"] == "getStatus") transmitStatus(true);
 
   if (doc["event"] == "scanWifi") scanWifi();
   if (doc["event"] == "connectWifi") {
@@ -267,7 +275,7 @@ uint8_t serialLoop() {
  * Analyze incoming string message and perform relevant action
  */
 uint8_t analyzeMessage(String msg) {
-  Serial0.println("Received message: " + msg);
+  //Serial.println("Received message: " + msg);
   
   /* In case of JSON string, return */
   if (msg[0] == '{') {
@@ -300,7 +308,7 @@ uint8_t analyzeMessage(String msg) {
       recArray[counter] += msg[i];
   }
 
-  /*
+ /*
   Serial.print("Decoded: ");
   for (int i=0; i<6; i++) {
     Serial.print(recArray[i] + ';');
@@ -326,9 +334,9 @@ uint8_t analyzeMessage(String msg) {
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_PSK) authMode = "WPA2-PSK";
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_WPA2_PSK) authMode = "WPA-WPA2-PSK";
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_ENTERPRISE) authMode = "WPA2-Enterprise";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK";
-        //else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK";
         else authMode = "Unknown";
         msg += (String)(i + 1) + "\t" + (String)WiFi.SSID(i) + "\t\t\t" + (String)WiFi.RSSI(i) + "dBm\t" + authMode + '\n';
       }
@@ -344,15 +352,6 @@ uint8_t analyzeMessage(String msg) {
   else if (recArray[0] == "PRINT"&& recArray[1] == "LOG") {
     //printLog();
   }
-
-  else if (recArray[0] == "REG") {
-   // uint8_t reg = recArray[1].toInt();
-   // uint8_t val = recArray[2].toInt();
-   // Serial.println("Writing to register: " + (String)reg + "\tVal: " + (String)val);
-   // IRsensor.writeRegister2(reg, val);
-  }
-  
-  
 
   return 0;
 }
@@ -390,7 +389,7 @@ void debug(String msg) {
 void setDebug(bool en) {
   debug("SETT - DEBUG - " + (String)en);
   settings.debug = en;
-  preferences.begin("config", true);
+  preferences.begin("config", false);
   preferences.putBool("debug",en);
   preferences.end();
 }
@@ -398,7 +397,7 @@ void setDebug(bool en) {
 void setSerialMode(bool en) {
   debug("SETT - SERIAL - " + (String)en);
   settings.serialMode = en ? SERIAL_DEFAULT : SERIAL_OFF;
-  preferences.begin("config", true);
+  preferences.begin("config", false);
   preferences.putUChar("serialMode",settings.serialMode);
   preferences.end();
 }

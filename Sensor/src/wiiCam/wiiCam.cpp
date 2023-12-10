@@ -3,103 +3,76 @@
 #include "Arduino.h"
 #include <Wire.h>
 
-//I2C address
-#define IR_ADDRESS 0x58
 
-//I2C message size
-#define MSGSIZE 40
-
-#define I2C_CLK 400000
+#define IR_ADDRESS 0x58   //I2C address
+#define MSGSIZE 40        //I2C message size
+#define I2C_CLK 400000    //I2C clock frequency
 
 wiiCam::wiiCam(uint8_t sda, uint8_t scl){
   _sda = sda;
   _scl = scl;
-  Wire.begin(_sda, _scl, I2C_CLK);
-  for (int i=0; i<9; i++) sensitivityBlock1[i] = 0;
-  for (int i=0; i<2; i++) sensitivityBlock2[i] = 0;
 }
 
 bool wiiCam::begin(){
-  writeRegister(0x30, 0x01);
-  writeRegister(0x33, 0x05);
-  writeRegister(0x06, 0xFF); //Set maximum intensity threshold
-  writeRegister(0x1A, 0x00); //Set maximum brightness
-  writeRegister(0x1B, 0x00); //Set minimum brightness threshold
-  writeRegister(0x30, 0x08);
+  Wire.setPins(_sda, _scl);
+  Wire.begin();
+  Wire.setClock(I2C_CLK);
+
+  while(1) {
+    Wire.beginTransmission(IR_ADDRESS);
+    uint8_t err = Wire.endTransmission();
+    if (err == 0) break;
+    else if (err == 4) Serial.println("WiiMote Sensor: Unknown error");
+    else Serial.println("WiiMote Sensor: Not found");
+    delay(5000);
+  }
+  
+  writeRegister(CONFIG, ENABLE_bm);
+  setOutputMode(MODE_FULL);
+  setPixelMaxBrightnessThreshold(255);
+  setPixelBrightnessThreshold(5);
+  writeRegister(MAX_BRIGHTNESS, 0);
+  updateRegisters();
+
   _framePeriodTimer = micros();
   return true;
 }
 
-uint32_t wiiCam::readRegister(uint8_t reg, uint8_t bytesToRead){
-  Wire.beginTransmission(IR_ADDRESS);
-  Wire.write(reg);
-  Wire.endTransmission();
-
-  Wire.requestFrom(IR_ADDRESS, bytesToRead);
-  return Wire.read();
-}
-
-/*
- * Write to the sensor register
- */
-void wiiCam::writeRegister(uint8_t reg, uint32_t val, uint8_t bytesToWrite){
-  Wire.beginTransmission(IR_ADDRESS);
-  Wire.write(reg); 
-  Wire.write(val);
-  Wire.endTransmission();
-}
-
-void wiiCam::writeRegister2(uint8_t reg, uint32_t val, uint8_t bytesToWrite){
-  Wire.beginTransmission(IR_ADDRESS);
-  Wire.write(reg); 
-  Wire.write(val);
-  Wire.endTransmission();
-
-  delay(10);
-  
-  Wire.beginTransmission(IR_ADDRESS);
-  Wire.write(0x30); Wire.write(0x08);
-  Wire.endTransmission();
-}
-
-void wiiCam::setSensitivity(uint8_t val) {
-  uint8_t brightness = 200*pow(0.9705,val);
-  writeRegister(0x08, brightness);
-}
-
-/*
- * Get the frame period of the sensor
- */
 float wiiCam::getFramePeriod(){
-  return 0;
+  return _framePeriod;
 }
 
 void wiiCam::setFramePeriod(float period){
-  
+  _framePeriod = period;
 }
 
-float wiiCam::getExposureTime(){
-  return 0;
-}
-
-void wiiCam::setExposureTime(float val){
-  
-}
-
-float wiiCam::getGain(){
-  return 0;
-}
-
-void wiiCam::setGain(float gainTemp){
-
-}
-
-uint8_t wiiCam::getPixelBrightnessThreshold(){
-  return readRegister(0x1B);
+void wiiCam::setSensitivity(uint8_t val) {
+  uint8_t brightness = 268*pow(0.95, val);
+  writeRegister(BRIGHTNESS_1, brightness);
+  writeRegister(BRIGHTNESS_2, brightness);
 }
 
 void wiiCam::setPixelBrightnessThreshold(uint8_t value){
-  writeRegister(0x1B,value);
+  writeRegister(MIN_BRIGHTNESS_THR,value);
+}
+
+uint8_t wiiCam::getPixelBrightnessThreshold(){
+  return readRegister(MIN_BRIGHTNESS_THR);
+}
+
+void wiiCam::setPixelMaxBrightnessThreshold(uint8_t value){
+  writeRegister(MAX_BRIGHTNESS_THR,value);
+}
+
+uint8_t wiiCam::getPixelMaxBrightnessThreshold(){
+  return readRegister(MAX_BRIGHTNESS_THR);
+}
+
+void wiiCam::setResolution(uint8_t x, uint8_t y) {
+  if (x > 128) x = 128;
+  if (y > 96) y = 96;
+  writeRegister(HOR_RES,x);
+  writeRegister(VERT_RES,y);
 }
 
 bool wiiCam::getInterruptState() {
@@ -110,12 +83,16 @@ bool wiiCam::getInterruptState() {
   return false;
 }
 
+void wiiCam::setOutputMode(output_mode_t mode) {
+  writeRegister(OUTPUT_MODE, mode);
+}
+
 bool wiiCam::getOutput(IrPoint *irPoints){
   detectedPoints = 0;
 
   //IR sensor read
   Wire.beginTransmission(IR_ADDRESS);
-  Wire.write(0x36);
+  Wire.write(OUTPUT);
   Wire.endTransmission();
 
   // Request the 2 byte heading (MSB comes first)
@@ -127,7 +104,7 @@ bool wiiCam::getOutput(IrPoint *irPoints){
     outputBuffer[i] = Wire.read();
     i++;
   }
-  
+ 
   for (int i=0; i<4; i++) {
     uint8_t brightness = outputBuffer[9+i*9];
     if (brightness == 255) {
@@ -142,7 +119,31 @@ bool wiiCam::getOutput(IrPoint *irPoints){
       irPoints[i].setMaxBrightness(brightness);
       irPoints[i].setAvgBrightness(brightness);
     }
+    
     irPoints[i].updateData();
   }
   return detectedPoints;
+}
+
+uint32_t wiiCam::readRegister(uint8_t reg){
+  Wire.beginTransmission(IR_ADDRESS);
+  Wire.write(reg);
+  Wire.endTransmission();
+
+  Wire.requestFrom(IR_ADDRESS, 1);
+  return Wire.read();
+}
+
+/*
+ * Write to the sensor register
+ */
+void wiiCam::writeRegister(uint8_t reg, uint32_t val){
+  Wire.beginTransmission(IR_ADDRESS);
+  Wire.write(reg); 
+  Wire.write(val);
+  Wire.endTransmission();
+}
+
+void wiiCam::updateRegisters() {
+  writeRegister(CONFIG, UPDATE_bm);
 }

@@ -12,6 +12,12 @@ unsigned long checkMCPtimer = 0;
 SOC_TH socState = SOC_NORMAL;
 bool powerSource = 0;
 
+#ifdef TINYPICO_BATTERY_MONITOR
+  float tpBatStorage = 0;
+  uint8_t chargeCounter = 0;
+  uint8_t chargeSum = 0;
+#endif
+
 /* prototype function */
 void initializeBatteryManagement(bool forceReset = false);
 
@@ -98,6 +104,11 @@ void initializeBatteryManagement(bool forceReset) {
     checkAlerts();
     
   #endif
+
+  #ifdef TINYPICO_BATTERY_MONITOR
+    tpAverageVoltage.setNrOfReadings(100);
+  #endif
+  
   /* Print status */
   printBatteryStatus();
 }
@@ -143,7 +154,57 @@ void batteryManagementLoop() {
       if (MAX17260.getPOR()) setModelConfig();        //Check POR occasionally in case the fuel gauge has been reset
     }
   #endif
+
+  #ifdef TINYPICO_BATTERY_MONITOR
+    tpVoltage = tpAverageVoltage.getAverage(tp.GetBatteryVoltage()*1000);
+    tpBatteryPercentage = getBatteryPercentage(tpVoltage);
+    tpUsbActive = analogRead(USB_ACTIVE_PIN)>1000 ? true : false;
+    if (tpUsbActive) {
+      chargeSum += (int)tp.IsChargingBattery();
+      chargeCounter++;
+      if (chargeCounter >= 100) {
+        chargingStatus = "Error";
+        tpChargeSum = chargeSum;
+        if (chargeSum < 100) { //full battery
+          chargingStatus = "Charged";
+        }
+        else {                  //charging
+          chargingStatus = "Charging";
+        }
+        //Serial.println("ChargeSum: " + (String)chargeSum);
+        chargeSum = 0;
+        chargeCounter = 0;
+      }
+    }
+    else {
+      chargingStatus = "USB Not Connected";
+    }
+
+    if (tpUsbActive != tpUsbActiveOld) {
+      if (tpUsbActive) debug("STATUS - USB - Plugged In");
+      else debug("STATUS - USB - Unplugged");
+      tpUsbActiveOld = tpUsbActive;
+      statusTimer = millis() - STATUS_PERIOD;
+    }
+  #endif
 }
+
+#ifdef TINYPICO_BATTERY_MONITOR
+  /**
+   * Get a very rough estimate of the battery voltage.
+   */
+  uint8_t getBatteryPercentage(float v) {
+    if (v > 4.2) v = 4.20;
+    int8_t percentage = 0;
+    if (v < 3.25) percentage =  round(80*(v-3.00));
+    else if (v >= 3.25 && v < 3.75) percentage =  round(20 + 120*(v-3.25));
+    else if (v >= 3.75 && v < 4.00) percentage =  round(80 + 60*(v-3.75));
+    else if (v >= 4.00) percentage =  round(95 + 50*(v-4.00));
+    if (percentage < 0) percentage = 0;
+    else if (percentage > 100) percentage = 100;
+    return percentage;
+  }
+#endif
 
 #ifdef PRODUCTION_BATTERY_MONITOR
   /**

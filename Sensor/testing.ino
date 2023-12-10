@@ -1,8 +1,6 @@
-#define USB_DP          20
-#define USB_DN          19
+#if defined(PRODUCTION_HW)
 
 void startTest() {
-  Serial0.begin(115200);
   Serial0.println("Starting test initialization");
 
   pinMode(BATTERY_LED_RED_PIN, OUTPUT);
@@ -104,3 +102,5 @@ void testPaj() {
       }
     }
 }
+
+#endif

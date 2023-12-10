@@ -48,14 +48,6 @@ void initializeWiFi() {
   networkConfig.ssid.toCharArray(ssidArray, networkConfig.ssid.length()+1);
   char pwArray[pw.length()+1];
   pw.toCharArray(pwArray, pw.length()+1);
-
-  Serial.print("ssid2: '");
-  Serial.print(ssidArray);
-  Serial.println("'");
-
-  Serial.print("pw2: '");
-  Serial.print(pwArray);
-  Serial.println("'");
   
   Serial.printf("------------------------------------\nInitializing WiFi\n\n");
 
@@ -89,6 +81,7 @@ void initializeWiFi() {
     }
   }
   /* If not connected to access point, start access point on sensor */
+  /*
   else {
     WiFi.disconnect();  
     WiFi.mode(WIFI_OFF); 
@@ -105,6 +98,7 @@ void initializeWiFi() {
     String ipAddress = IP.toString().c_str();
     Serial.println("Started WiFi access point\n");
   }
+  */
 
   /* Print status */
   printWiFiStatus();

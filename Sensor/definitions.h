@@ -7,9 +7,36 @@
 
 #define TEST_PIN    8
 
-#define FIRMWARE_VERSION  "3.0.2"           /* Firmware version of the sensor */
+#define FIRMWARE_VERSION  "3.0.4"           /* Firmware version of the sensor */
 #define DEVICE_NAME       "materialsensor"  /* (Default) device name which is used to name the access point and webserver address (e.g. http://materialsensor.local) */
+
 const String GITHUB_LINK PROGMEM = "https://github.com/CDeenen/MaterialPlane_Hardware/releases?q=webserver&expanded=true"; /* GitHub link to get firmware updates from */
+
+#ifndef HARDWARE_VARIANT
+
+#define HARDWARE_VARIANT "DIY Basic"
+#define HARDWARE_VERSION "1.0"
+#define WIIMOTE_SENSOR
+#define BATTERY_LED
+#define CONNECTION_LED
+
+//I2C pins for WiiMote camera
+static const uint8_t SDA_PIN = 21;
+static const uint8_t SCL_PIN = 22;
+
+//LED pins
+static const uint8_t BATTERY_LED_GREEN_PIN    = 25;   //Green battery led pin
+static const uint8_t BATTERY_LED_RED_PIN      = 26;    //Red battery led pin
+static const uint8_t CONNECTION_LED_GREEN_PIN = 27;   //Green connection led pin
+static const uint8_t CONNECTION_LED_RED_PIN   = 15;    //Red connection led pin
+
+//LED channels
+static const uint8_t BATTERY_LED_GREEN        = 0;    //Green battery led channel
+static const uint8_t BATTERY_LED_RED          = 1;    //Red battery led channel
+static const uint8_t CONNECTION_LED_GREEN     = 2;    //Green connection led channel
+static const uint8_t CONNECTION_LED_RED       = 3;    //Red connection led channel
+
+#endif
 
 /* Serial modes */
 enum SERIAL_MODE

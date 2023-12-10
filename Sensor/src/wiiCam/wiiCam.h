@@ -4,6 +4,33 @@
 #include "Arduino.h"
 #include "../IrPoint/IrPoint.h"
 
+//Registers
+#define MAX_BRIGHTNESS_THR  0x06
+#define BRIGHTNESS_1        0x08
+#define MAX_OBJECTS         0x10
+#define HOR_RES             0x12
+#define VERT_RES            0x13
+#define BRIGHTNESS_2        0x17
+#define MAX_BRIGHTNESS      0x1A
+#define MIN_BRIGHTNESS_THR  0x1B
+#define CONFIG              0x30
+#define OUTPUT_MODE         0x33
+#define OUTPUT              0x36
+
+//Bitmasks
+#define ENABLE_bm           0x01
+#define UPDATE_bm           0x08
+
+/**
+ * Enums
+ */
+enum output_mode_t
+{
+    MODE_BASIC = 1,
+    MODE_EXTENDED = 3,
+    MODE_FULL = 5
+};
+
 class wiiCam
 {
   public:
@@ -11,23 +38,23 @@ class wiiCam
     bool begin();
     float getFramePeriod();
     void setFramePeriod(float period);
-    float getExposureTime();
-    void setExposureTime(float val);
-    float getGain();
-    void setGain(float gainTemp);
     void setSensitivity(uint8_t val);
     uint8_t getPixelBrightnessThreshold();
     void setPixelBrightnessThreshold(uint8_t value);
-    bool getOutput(IrPoint *irPoints);
+    uint8_t getPixelMaxBrightnessThreshold();
+    void setPixelMaxBrightnessThreshold(uint8_t value);
+    void setResolution(uint8_t x, uint8_t y);
     bool getInterruptState();
-    void writeRegister(uint8_t reg, uint32_t val, uint8_t bytesToWrite = 1);
-    void writeRegister2(uint8_t reg, uint32_t val, uint8_t bytesToWrite = 1);
+    void setOutputMode(output_mode_t mode);
+    bool getOutput(IrPoint *irPoints);
 
     uint8_t detectedPoints;
     bool connected = false;
 
   private:
-    uint32_t readRegister(uint8_t reg, uint8_t bytesToRead = 1);
+    uint32_t readRegister(uint8_t reg);
+    void writeRegister(uint8_t reg, uint32_t val);
+    void updateRegisters();
     
     
     unsigned long _framePeriod = 16;
@@ -42,8 +69,6 @@ class wiiCam
     uint8_t reconnectCount = 0;
     uint8_t _sda;
     uint8_t _scl;
-    uint8_t sensitivityBlock1[9];
-    uint8_t sensitivityBlock2[2];
     uint64_t _framePeriodTimer;
 };
 #endif /* wiiCam_H */

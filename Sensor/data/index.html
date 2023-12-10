@@ -96,9 +96,10 @@
         <input type="checkbox" id="serialOut" name="serialOut">
       </div>
 
-      <hr>
+      <div class="Production/Full">
 
-      <div class="Production">
+        <hr>
+
         <h3>Battery</h3>
         <div class="settings">
           <label class="tooltip">Charging State
@@ -113,13 +114,13 @@
           <labelRight id="usbConnected"></labelRight>
         </div>
         
-        <div class="settings">
+        <div class="settings" id="batPercentage">
           <label class="tooltip">Percentage
             <span class="tooltiptext">Approximate battery charge remaining.</span>
           </label>
           <labelRight id="batteryPercentage"></labelRight>
         </div>
-        <div class="settings" id="batteryTimeToEmpty_div">
+        <div class="settings Production" id="batteryTimeToEmpty_div">
           <label class="tooltip"><div id="batteryTimeToEmpty_label">Time to empty</div>
             <span class="tooltiptext">Approximate time until the battery is either full or empty (hours:minutes).</span>
           </label>
@@ -134,13 +135,13 @@
             </label>
             <labelRight id="batteryVoltage"></labelRight>
           </div>
-          <div class="settings">
+          <div class="settings Production">
             <label class="tooltip">Current
               <span class="tooltiptext">Electric current into (positive) or out of (negative) the battery.</span>
             </label>
             <labelRight id="batteryCurrent"></labelRight>
           </div>
-          <div class="settings">
+          <div class="settings Production">
             <label class="tooltip">Capacity
               <span class="tooltiptext">Capacity of the battery (current capacity/full capacity).</span>
             </label>

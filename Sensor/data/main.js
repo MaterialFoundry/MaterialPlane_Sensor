@@ -1,4 +1,4 @@
-const webserverVersion = "v2.0.0";
+const webserverVersion = "v2.0.1";
 
 let ws;                         //Websocket variable
 let wsOpen = false;             //Bool for checking if websocket has ever been opened => changes the warning message if there's no connection
@@ -288,12 +288,14 @@ function analyzeMessage(msg) {
         console.warn("Could not parse JSON: " + msg);
         return;
     }
-    console.log('data',data)
+    //console.log('data',data)
 
     if (data.status == "ping") {
         document.getElementById("waitMessage").style = "display:none";
         document.getElementById("mainBody").style = "";
     }
+    else console.log('data',data)
+
     if (data.status == "disableTimeout") {
         disableTimeout = true;
     }
@@ -330,12 +332,12 @@ function analyzeMessage(msg) {
         document.getElementById("debugEn").checked = settings.debug;
         document.getElementById("serialOut").checked = settings.serialMode == 'default';
 
-        if (hwVariant == "Production") {
+        if (hwVariant == "Production" || hwVariant == "DIY Full") {
             //Power settings
             document.getElementById("chargingState").innerHTML = power.chargerStatus;
-            if (power.chargerStatus != "Not Charging" && power.chargerStatus != "Charging" && power.chargerStatus != "Charged") document.getElementById("chargingState").style.color = '#FF0000';
+            if (power.chargerStatus != "Not Charging" && power.chargerStatus != "Charging" && power.chargerStatus != "Charged" && power.chargerStatus != "USB Not Connected") document.getElementById("chargingState").style.color = '#FF0000';
             else document.getElementById("chargingState").style.color = '#000000';
-            document.getElementById("usbConnected").innerHTML = settings.usbConnected == 1 ? "Yes" : "No";
+            //document.getElementById("usbConnected").innerHTML = settings.usbConnected == 1 ? "Yes" : "No";
             document.getElementById("batteryPercentage").innerHTML = `${power.percentage}%`;
             if (power.chargerStatus == "Charging") document.getElementById("batteryTimeToEmpty_label").innerHTML = 'Time to Full';
             else if (power.chargerStatus == "Not Charging") document.getElementById("batteryTimeToEmpty_label").innerHTML = 'Time to Empty';
@@ -346,15 +348,24 @@ function analyzeMessage(msg) {
                 let timeStr = "";
                 timeStr += hr + ':';
                 timeStr += min<10 ? `0${min}` : min;
-                document.getElementById("batteryTimeToEmpty_div").style.display = "";
-                document.getElementById("batteryTimeToEmpty").innerHTML = timeStr;
+                if (hwVariant == "Production") {
+                    document.getElementById("batteryTimeToEmpty_div").style.display = "";
+                    document.getElementById("batteryTimeToEmpty").innerHTML = timeStr;
+                }
+                else if (hwVariant == "DIY Full") {
+                    document.getElementById("batPercentage").style.display = "none";
+                }
             }
-            else document.getElementById("batteryTimeToEmpty_div").style.display = "none";
+            else if (hwVariant == "Production") document.getElementById("batteryTimeToEmpty_div").style.display = "none";
+            else if (hwVariant == "DIY Full") {
+                document.getElementById("batPercentage").style.display = "";
+            }
             document.getElementById("batteryVoltage").innerHTML = `${parseInt(power.voltage)/1000} V`;
-            document.getElementById("batteryCurrent").innerHTML = `${power.current} mA`;
-            document.getElementById("batteryCapacity").innerHTML = `${power.capacity}/${power.fullCapacity} mAh`;
+            if (hwVariant == "Production") {
+                document.getElementById("batteryCurrent").innerHTML = `${power.current} mA`;
+                document.getElementById("batteryCapacity").innerHTML = `${power.capacity}/${power.fullCapacity} mAh`;
+            }
         }
-
         
         document.getElementById("connectionStatus").innerHTML = network.wifiConnected ? "Connected" : "Not Connected";
         document.getElementById("ssid").innerHTML = `"${network.ssid}"`;
@@ -583,11 +594,11 @@ function hwVariantFilter(variant) {
     else if (variant == 'DIY Full') variant = 'DIY_Full';
     if (hwVariantFiltered == variant) return;
 
-    hideElementsByClassName('Production', true);
-    hideElementsByClassName('Beta', true);
-    hideElementsByClassName('DIY_Basic', true);
-    hideElementsByClassName('DIY_Full', true);
-    hideElementsByClassName(variant, false);
+    hideElementsByClassName('Production', variant != 'Production');
+    hideElementsByClassName('Beta', variant != 'Beta');
+    hideElementsByClassName('DIY_Basic', variant != 'DIY_Basic');
+    hideElementsByClassName('DIY_Full', variant != 'DIY_Full');
+    hideElementsByClassName('Production/Full', variant != 'DIY_Full' && variant != 'Production');
 
     hwVariantFiltered = variant;
 }
@@ -670,11 +681,6 @@ function checkForUpdates(fwVersion, wsVersion) {
                         document.getElementById("updatePopup").style.display = "none";
                     }
                 }
-
-
-                console.log('firmware',fwVersion,firmware,fw);
-                console.log('webserver',wsVersion,webserver,ws);
-
                 return;
             }
             

@@ -18,6 +18,7 @@ class RunningAverage {
     uint16_t _values[MAX_READINGS];
     uint8_t _index = 0;
     uint32_t _totalReadings = 0;
+    uint16_t _clearCounter = 0;
     uint16_t _clearAt = MAX_READINGS;
     bool _firstReset = false; 
 };

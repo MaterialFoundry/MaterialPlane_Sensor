@@ -35,7 +35,6 @@ void initializeWebsocket() {
   
   webSocketServer.begin();
   webSocketServer.onEvent(webSocketServerEvent);
-  //webSocketServer.enableHeartbeat(PING_PERIOD, 5000, 10);
   printWebsocketStatus();
 }
 
@@ -55,7 +54,11 @@ void webSocketServerEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
     case WStype_DISCONNECTED:
       {
           debug("STATUS - WS - DISCONNECTED - " + (String)num);
-         // cancelCalibrationOnDisconnect(num);
+          // cancelCalibrationOnDisconnect(num);
+          if (getWebsocketClientNum() == 0) {
+            ledcWrite(CONNECTION_LED_RED, LED_R_MAX);
+            ledcWrite(CONNECTION_LED_GREEN, 0);
+          }
       }
       break;
     case WStype_CONNECTED:
@@ -68,6 +71,8 @@ void webSocketServerEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
           initialSend = false;
         }
         statusTimer = millis() - STATUS_PERIOD;
+        ledcWrite(CONNECTION_LED_RED, 0);
+        ledcWrite(CONNECTION_LED_GREEN, LED_G_MAX);
       }
       break;
     case WStype_TEXT:
