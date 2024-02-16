@@ -49,8 +49,8 @@ bool PAJ7025R3::begin(){
     begin();
     return false;
   }
-  else
-    Serial.println("Connected to sensor");
+  //else
+  //  Serial.println("Connected to sensor");
 
   setFrameSubstraction(0);
   setResolutionScale(4095,4095);

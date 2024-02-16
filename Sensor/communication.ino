@@ -77,7 +77,7 @@ void transmitStatus(bool forceTransmit) {
   }
   StaticJsonDocument<JSON_OBJECT_SIZE(15)> network;
   network["ssid"] = networkConfig.ssid;
-  network["ip"] = WiFi.localIP();
+  network["ip"] = sensorIP;
   network["name"] = networkConfig.name;
   network["wifiConnected"] = WiFi.isConnected();
   network["websocketMode"] = websocketModeString[networkConfig.websocketMode];
@@ -125,7 +125,7 @@ void transmitStatus(bool forceTransmit) {
     statusDoc["power"] = power;
   #endif
 
-  #ifdef TINYPICO_BATTERY_MONITOR
+  #if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
     StaticJsonDocument<JSON_OBJECT_SIZE(50)> power;
     power["percentage"] = tpBatteryPercentage;
     power["voltage"] = tpVoltage;
@@ -146,7 +146,7 @@ void transmitStatus(bool forceTransmit) {
 void transmitCoordinates() {
   uint8_t detectedPoints = 0;
   uint8_t validPoints = 0;
-  
+
   StaticJsonDocument<JSON_OBJECT_SIZE(160)> points;
 
   /* Check all ir points */
@@ -169,11 +169,27 @@ void transmitCoordinates() {
   }
   if (detectedPoints == 0) return;
 
+  int32_t id = validPoints > 0 ? baseId : 0;
+  static unsigned long lastTransmit = 0;
+  static uint8_t lastTransmitCount = 0;
+  if (id == 0 && getRmtBusy()) {
+    //if rmt has received an input in the last 10ms and this is a new base movement (lastTransmit >= 500ms), don't transmit and wait for rmt to be done
+    if (millis() - lastTransmit >= 500) {
+      lastTransmitCount++;
+      return;
+    }
+    //wait for 3 cycles, otherwise start transmitting
+    if (lastTransmitCount < 4) {
+      lastTransmitCount++;
+      return;
+    }
+  }
+
   /* Add general data to json document (id, cmd, battery) */
   StaticJsonDocument<JSON_OBJECT_SIZE(100)> coordsDoc;
   coordsDoc["status"] = "IR data";
   coordsDoc["detectedPoints"] = detectedPoints;
-  coordsDoc["id"] = validPoints > 0 ? baseId : 0;
+  coordsDoc["id"] = id;
   coordsDoc["command"] = validPoints > 0 ? baseCmd : 0;
   coordsDoc["battery"] = baseBatToPercentage(baseBat);
   coordsDoc["irPoints"] = points;
@@ -181,6 +197,7 @@ void transmitCoordinates() {
   char output[1000];
   serializeJson(coordsDoc, output);
   broadcastWs(output);
+  lastTransmit = millis();
  
   if (settings.debug) Serial.println(output);
 }
@@ -203,8 +220,8 @@ uint8_t baseBatToPercentage(uint8_t bat) {
  * Analyze incoming json data and perform relevant action
  */
 void analyzeJson(char* msg, uint8_t source) {
-  //Serial0.print("Analyze JSON: ");
-  //Serial0.println(msg);
+  //Serial.print("Analyze JSON: ");
+  //Serial.println(msg);
   
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, msg);
@@ -231,7 +248,25 @@ void analyzeJson(char* msg, uint8_t source) {
   if (doc["event"] == "autoExposure") performAutoExposure();
   if (doc["event"] == "restart") ESP.restart();
   if (doc["event"] == "calibration") {
-    if (doc["state"] == "start") performCalibration(doc["mode"], source);
+    if (doc["state"] == "init") {
+      broadcastWs("{\"status\":\"calibration\",\"state\":\"init\"}");
+      debug("CAL - INIT");
+    }
+    else if (doc["state"] == "start") {
+      if (doc["calibrationBounds"]) {
+        JsonObject calibrationBounds = doc["calibrationBounds"];
+        double xMin = calibrationBounds["xMin"];
+        double xMax = calibrationBounds["xMax"];
+        double yMin = calibrationBounds["yMin"];
+        double yMax = calibrationBounds["yMax"];
+        performCalibration(doc["mode"], source, xMin, xMax, yMin, yMax);
+      }
+      else {
+        performCalibration(doc["mode"], source, 0, 1, 0, 1);
+      }
+      
+      
+    }
     else if (doc["state"] == "next") nextCalibrationPoint();
     else if (doc["state"] == "cancel") cancelCalibration();
   }
@@ -245,9 +280,7 @@ void analyzeJson(char* msg, uint8_t source) {
   }
 
   if (doc["event"] == "reset") {
-    Serial.println("reset");
     bool bat = doc["battery"];
-    Serial.println(bat);
     if (doc["ir"] == 1) clearIrPreferences();
     if (doc["battery"] == 1) clearBatteryPreferences();
     if (doc["network"] == 1) {
@@ -308,40 +341,43 @@ uint8_t analyzeMessage(String msg) {
       recArray[counter] += msg[i];
   }
 
- /*
-  Serial.print("Decoded: ");
-  for (int i=0; i<6; i++) {
-    Serial.print(recArray[i] + ';');
-  }
-  Serial.println();
-  */
-
   /*********************** Perform relevant action ***********************/
   if (recArray[0] == "SCAN" && recArray[1] == "WIFI") {
     Serial.println("Scanning for WIFI stations. Please wait.");
     int n = WiFi.scanNetworks();
-    String wsMsg = "{\"status\":\"wifiStations\",\"data\":[";
-    String msg = "";
+    //String wsMsg = "{\"status\":\"wifiStations\",\"data\":[";
     if (n==0)
-      msg = "No stations found"; 
+      Serial.println("No WiFi access points found"); 
     else {
-      msg += (String)n + " stations found\nNr\tSSID\t\t\tRSSI\tAuthentication Mode\n";
+      Serial.println("\r\n" + (String)n + " WiFi access points found:");
+      Serial.println("| Nr\t| SSID\t\t\t    | RSSI\t| Authentication Mode\t|");
+      Serial.println("|-------|---------------------------|-----------|-----------------------|");
       for (int i = 0; i < n; ++i) {
+        
         String authMode = "";
-        if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) authMode = "Open";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WEP) authMode = "WEP";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_PSK) authMode = "WPA-PSK";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_PSK) authMode = "WPA2-PSK";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_WPA2_PSK) authMode = "WPA-WPA2-PSK";
+        if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) authMode = "Open\t\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WEP) authMode = "WEP\t\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_PSK) authMode = "WPA-PSK\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_PSK) authMode = "WPA2-PSK\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA_WPA2_PSK) authMode = "WPA-WPA2-PSK\t";
         else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_ENTERPRISE) authMode = "WPA2-Enterprise";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK";
-        else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA3_PSK) authMode = "WPA3-PSK\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WPA2_WPA3_PSK) authMode = "WPA2-WPA3-PSK\t";
+        else if (WiFi.encryptionType(i) == WIFI_AUTH_WAPI_PSK) authMode = "WAPI-PSK\t";
         else authMode = "Unknown";
-        msg += (String)(i + 1) + "\t" + (String)WiFi.SSID(i) + "\t\t\t" + (String)WiFi.RSSI(i) + "dBm\t" + authMode + '\n';
+        
+        String msg = "| " + (String)(i + 1) + "\t| ";
+        String ssid = (String)WiFi.SSID(i);
+        for (int j=0; j<25; j++) {
+          if (j > ssid.length() || ssid[j] == 0) msg += ' ';
+          else msg += ssid[j];
+        }
+        msg += " | " + (String)WiFi.RSSI(i) + "dBm\t| " + authMode + "\t|";
+        Serial.println(msg);
       }
+      Serial.println("\r\nConnect to an access point by sending: 'CONNECT WIFI \"[SSID]\" \"[password]\"'\r\n");
     }
-    Serial.println(msg);
+    //Serial.println(msg);
   }
   else if (recArray[0] == "CONNECT" && recArray[1] == "WIFI"){
       setStation(recArray[2], recArray[3]);
@@ -361,17 +397,17 @@ uint8_t analyzeMessage(String msg) {
  */
 void printStatus() {
   printInitStatus();
-  Serial.printf("WiFi\n");
+  Serial.printf("WiFi\r\n");
   printWiFiStatus();
-  Serial.printf("Webserver\n");
+  Serial.printf("Webserver\r\n");
   printWebserverStatus();
-  Serial.printf("Websocket\n");
+  Serial.printf("Websocket\r\n");
   printWebsocketStatus();
-  Serial.printf("Battery\n");
+  Serial.printf("Battery\r\n");
   printBatteryStatus();
-  Serial.printf("IR\n");
+  Serial.printf("IR\r\n");
   printIRStatus();
-  Serial.printf("------------------------------------------------------------------------\n\n");
+  Serial.printf("------------------------------------------------------------------------\r\n\r\n");
 }
 
 /**

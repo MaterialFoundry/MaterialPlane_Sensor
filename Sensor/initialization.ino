@@ -28,7 +28,7 @@ void initializePreferences() {
  * Print initialization status
  */
 void printInitStatus() {
-  Serial.printf("\n\n------------------------------------------------------------------------\nMaterial Plane Sensor\n------------------------------------\n\nHardware Variant:\t%s\nHardware Version:\tv%s\nFirmware Version:\tv%s\n\n", HARDWARE_VARIANT, HARDWARE_VERSION, FIRMWARE_VERSION);
+  Serial.printf("\r\n\r\n------------------------------------------------------------------------\r\nMaterial Plane Sensor\r\n------------------------------------\r\n\r\nHardware Variant:\t%s\r\nHardware Version:\tv%s\r\nFirmware Version:\tv%s\r\n\r\n", HARDWARE_VARIANT, HARDWARE_VERSION, FIRMWARE_VERSION);
 }
 
 /**
@@ -44,7 +44,7 @@ void initialization() {
   #endif
   
   Serial.begin(115200);
-  Serial.printf("Starting initialization\n");
+  Serial.printf("Starting initialization\r\n");
   
   printInitStatus();
   initializeUSB();
@@ -87,7 +87,7 @@ void initialization() {
   /* Set to true so other functions know initialization is done */
   started = true;
   
-  Serial.printf("------------------------------------\nInitialization done\n------------------------------------------------------------------------\n\n");
+  Serial.printf("------------------------------------\r\nInitialization done\r\n------------------------------------------------------------------------\r\n\r\n");
 
   #ifdef BATTERY_LED
     /* Fade-out red LED */

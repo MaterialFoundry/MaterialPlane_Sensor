@@ -49,7 +49,7 @@
           if (started) debug("STATUS - USB - CDC Line State - dtr: " + (String)data->line_state.dtr + " rts: " + (String)data->line_state.rts);
           break;
         case ARDUINO_USB_CDC_LINE_CODING_EVENT:
-          //if (started) debug("STATUS - CDC LINE CODING: bit_rate: %u, data_bits: %u, stop_bits: %u, parity: %u\n", data->line_coding.bit_rate, data->line_coding.data_bits, data->line_coding.stop_bits, data->line_coding.parity);
+          //if (started) debug("STATUS - CDC LINE CODING: bit_rate: %u, data_bits: %u, stop_bits: %u, parity: %u\r\n", data->line_coding.bit_rate, data->line_coding.data_bits, data->line_coding.stop_bits, data->line_coding.parity);
           break;
         case ARDUINO_USB_CDC_RX_EVENT:
           break;
@@ -68,11 +68,11 @@
  */
 void initializeUSB() {
   #ifdef NATIVE_USB
-    Serial.printf("------------------------------------\nInitializing USB\n");
+    Serial.printf("------------------------------------\r\nInitializing USB\r\n");
     USB.onEvent(usbEventCallback);
     #ifndef SERIAL_DEBUG
       Serial.onEvent(usbEventCallback);
     #endif
-    Serial.printf("\nProduct Name:\t\t'%s'\nManufacturer Name:\t'%s'\nSerial Number:\t\t'%s'\nVID:\t\t\t0x%X\nPID:\t\t\t0x%X\nUSB connected:\t\t%s\nSerial port open:\t%s\n\n", USB_PRODUCT_NAME, USB_MANUFACTURER_NAME, USB.serialNumber(), USB_VID, USB_PID, usbConnected?"true":"false", serialConnected?"true":"false");
+    Serial.printf("\r\nProduct Name:\t\t'%s'\r\nManufacturer Name:\t'%s'\r\nSerial Number:\t\t'%s'\r\nVID:\t\t\t0x%X\r\nPID:\t\t\t0x%X\r\nUSB connected:\t\t%s\r\nSerial port open:\t%s\r\n\r\n", USB_PRODUCT_NAME, USB_MANUFACTURER_NAME, USB.serialNumber(), USB_VID, USB_PID, usbConnected?"true":"false", serialConnected?"true":"false");
   #endif
 }

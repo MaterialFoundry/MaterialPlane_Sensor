@@ -4,7 +4,10 @@ Please visit the <a href="https://github.com/MaterialFoundry/MaterialPlane">Mate
 <br>
 The code was written using <a href="https://www.arduino.cc/">Arduino</a> and requires the installation of the <a href="https://github.com/MaterialFoundry/MaterialFoundry_Arduino">Material Foundry boards</a>.
 
+Everything, except for the libraries below, was written by Material Foundry.
+
 ### Libraries
+
 <b>ArduinoJson</b>
 <ul>
 <li><b>Author(s): </b>Benoît Blanchon</li>
@@ -59,6 +62,14 @@ Greatly influenced by:
 <li><b>License: </b>MIT</li>
 <li><b><a href="https://github.com/UnexpectedMaker/tinypico-helper">Link</a></b></li>
 <li><b>Edits Made: </b>None</li>
+</ul>
+
+<b>TinyS3 Arduino Helper</b>
+<ul>
+<li><b>Author(s): </b>UnexpectedMaker</li>
+<li><b>License: </b>MIT</li>
+<li><b><a href="https://github.com/UnexpectedMaker/esp32s3-arduino-helper">Link</a></b></li>
+<li><b>Edits Made: </b>Removed unused functions, modified it to bring it in line with the TinyPICO library</li>
 </ul>
 
 <b>arduinoWebSockets</b>

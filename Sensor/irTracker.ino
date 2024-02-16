@@ -22,7 +22,8 @@ String calModeStr = "";
 uint64_t autoExpTimer;
 uint8_t autoExpCounter;
 uint8_t autoExpMaxCounter;
-
+float calBounds[4] = {0, 4096, 0, 4096}; //on-screen calibration point locations {xMin, xMax, yMin, yMax}
+float offsetBounds[4] = {0, 4096, 0, 4096};
 /**
  * Clear all ir tracker preferences
  */
@@ -51,6 +52,10 @@ void clearIrPreferences() {
   preferences.putFloat("calY_1", 0);
   preferences.putFloat("calY_2", 0);
   preferences.putFloat("calY_3", 4095);
+  preferences.putFloat("calBoundsXmin", 0);
+  preferences.putFloat("calBoundsXmax", 4096);
+  preferences.putFloat("calBoundsYmin", 0);
+  preferences.putFloat("calBoundsYmax", 4096);
   preferences.putFloat("offsetX_0", 4095);
   preferences.putFloat("offsetX_1", 4095);
   preferences.putFloat("offsetX_2", 0);
@@ -67,10 +72,10 @@ void clearIrPreferences() {
  * Print ir tracker status
  */
 void printIRStatus() {
-  Serial.printf("Update Rate:\t\t%d\nBrightness:\t\t%d\nMinimum Brightness:\t%d\nAverage Count:\t\t%d\n", sensorConfig.updateRate, sensorConfig.brightness, sensorConfig.minBrightness, sensorConfig.average);
-  Serial.printf("Mirror X:\t\t%s\nMirror Y:\t\t%s\nRotation:\t\t%s\n", sensorConfig.mirrorX ? "Enabled" : "Disabled", sensorConfig.mirrorY ? "Enabled" : "Disabled", sensorConfig.rotation ? "Enabled" : "Disabled");
-  Serial.printf("Offset X:\t\t%d\nOffset Y:\t\t%d\nScale X:\t\t%.3f\nScale Y:\t\t%.3f\n", sensorConfig.offsetX, sensorConfig.offsetY, sensorConfig.scaleX, sensorConfig.scaleY);
-  Serial.printf("Calibration:\t\t%s\nCalibration Offset:\t%s\n\n", sensorConfig.calibrationEnable ? "Enabled" : "Disabled", sensorConfig.calibrationOffsetEnable ? "Enabled" : "Disabled");
+  Serial.printf("Update Rate:\t\t%d\r\nBrightness:\t\t%d\r\nMinimum Brightness:\t%d\r\nAverage Count:\t\t%d\r\n", sensorConfig.updateRate, sensorConfig.brightness, sensorConfig.minBrightness, sensorConfig.average);
+  Serial.printf("Mirror X:\t\t%s\r\nMirror Y:\t\t%s\r\nRotation:\t\t%s\r\n", sensorConfig.mirrorX ? "Enabled" : "Disabled", sensorConfig.mirrorY ? "Enabled" : "Disabled", sensorConfig.rotation ? "Enabled" : "Disabled");
+  Serial.printf("Offset X:\t\t%d\r\nOffset Y:\t\t%d\r\nScale X:\t\t%.3f\r\nScale Y:\t\t%.3f\r\n", sensorConfig.offsetX, sensorConfig.offsetY, sensorConfig.scaleX, sensorConfig.scaleY);
+  Serial.printf("Calibration:\t\t%s\r\nCalibration Offset:\t%s\r\n\r\n", sensorConfig.calibrationEnable ? "Enabled" : "Disabled", sensorConfig.calibrationOffsetEnable ? "Enabled" : "Disabled");
 }
 
 /**
@@ -81,7 +86,7 @@ void initializeIrTracker() {
 
   /* Only run if sensor is not fully initialized (so the first time this function is called) */
   if (!started) {
-    Serial.printf("------------------------------------\nInitializing IR sensor\n\n");
+    Serial.printf("------------------------------------\r\nInitializing IR sensor\r\n\r\n");
 
     #ifdef PRODUCTION_HW
       /* Set pin mode of power pin and set it high (to apply power) */
@@ -91,7 +96,6 @@ void initializeIrTracker() {
 
     /* Load all ir tracker settings */
     preferences.begin("irTracker", false);
-    Serial.println("test: " + (String)preferences.getBool("calEnable"));
     sensorConfig.calibrationEnable = preferences.getBool("calEnable", sensorConfig.calibrationEnable);
     sensorConfig.calibrationOffsetEnable = preferences.getBool("calOffsetEnable", sensorConfig.calibrationOffsetEnable);
     sensorConfig.mirrorX = preferences.getBool("mirrorX", sensorConfig.mirrorX);
@@ -113,7 +117,6 @@ void initializeIrTracker() {
     cal_storedCoordinates[1][1] = preferences.getFloat("calY_1", 0);
     cal_storedCoordinates[2][1] = preferences.getFloat("calY_2", 0);
     cal_storedCoordinates[3][1] = preferences.getFloat("calY_3", 4095);
-
     offsetPoints[0][0] = preferences.getFloat("offsetX_0", 4095);
     offsetPoints[1][0] = preferences.getFloat("offsetX_1", 4095);
     offsetPoints[2][0] = preferences.getFloat("offsetX_2", 0);
@@ -122,8 +125,17 @@ void initializeIrTracker() {
     offsetPoints[1][1] = preferences.getFloat("offsetY_1", 0);
     offsetPoints[2][1] = preferences.getFloat("offsetY_2", 0);
     offsetPoints[3][1] = preferences.getFloat("offsetY_3", 4095);
+    calBounds[0] = preferences.getFloat("calBoundsXmin", 0);
+    calBounds[1] = preferences.getFloat("calBoundsXmax", 4096);
+    calBounds[2] = preferences.getFloat("calBoundsYmin", 0);
+    calBounds[3] = preferences.getFloat("calBoundsYmax", 4096);
+    offsetBounds[0] = preferences.getFloat("offsetBoundsXmin", 0);
+    offsetBounds[1] = preferences.getFloat("offsetBoundsXmax", 4096);
+    offsetBounds[2] = preferences.getFloat("offsetBoundsYmin", 0);
+    offsetBounds[3] = preferences.getFloat("offsetBoundsYmax", 4096);
     preferences.end();
 
+    cal.setBounds(calBounds[0], calBounds[1], calBounds[2], calBounds[3]);
     setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
 
     /* Configure all ir points */
@@ -145,7 +157,7 @@ void initializeIrTracker() {
   bool irSensorConnected = IRsensor.begin();
   #ifdef PAJ_SENSOR
     if (!irSensorConnected) {
-      Serial.printf("ERROR: Could not connect to IR sensor\n");
+      Serial.printf("ERROR: Could not connect to IR sensor\r\n");
       debug("ERR - PAJ - No connect");
       return;
     }
@@ -557,17 +569,6 @@ void getAutoExposure() {
       if (autoExposeMinBrightness == 255) autoExpStatus = AUTOEXP_CANCEL;
       setMinBrightness(autoExposeMinBrightness, false);
     }
-
-  /*
-    Serial.print("Detected points: " + (String)detectedPoints + '\t');
-    for (int i=0; i<detectedPoints; i++) {
-      Serial.print((String)orderedBrightnessValues[i][0] + ": " + (String)orderedBrightnessValues[i][1] + '\t');
-    }
-    if (detectedPoints > 1)
-      Serial.print("\tDiff: " + (String)(orderedBrightnessValues[0][1] - orderedBrightnessValues[1][1]) + '\t');
-
-    Serial.println("\t\tBr: " + (String)autoExposeBrightness + "\tMin: " + (String)autoExposeMinBrightness);
-    */
   }
 
   /* Do when auto exposure is successfully finished */
@@ -613,12 +614,32 @@ void getAutoExposure() {
 /**
  * Start calibration procedure
  */
-void performCalibration(String mode, uint8_t source) {
+bool onScreenCal = false;
+
+void performCalibration(String mode, uint8_t source, double xMin, double xMax, double yMin, double yMax) {
   //Serial.println("Starting calibration: " + mode);
+
+  if (xMin != 0 || yMin != 0 || xMax != 1 || yMax != 1) onScreenCal = true;
+  else onScreenCal = false;
+
+  if (mode != "Offset") {
+    calBounds[0] = xMin*4096;
+    calBounds[1] = xMax*4096;
+    calBounds[2] = yMin*4096;
+    calBounds[3] = yMax*4096;
+  }
+  
   if (mode == "SinglePoint") calMode = CAL_MODE_SINGLE;
   else if (mode == "MultiPoint") calMode = CAL_MODE_MULTI;
-  else if (mode == "Offset") calMode = CAL_MODE_OFFSET;
+  else if (mode == "Offset") {
+    calMode = CAL_MODE_OFFSET;
+    offsetBounds[0] = xMin*4096;
+    offsetBounds[1] = xMax*4096;
+    offsetBounds[2] = yMin*4096;
+    offsetBounds[3] = yMax*4096;
+  }
   else return;
+  
   calStatus = CAL_STARTING;
   calSource = source;
 }
@@ -629,6 +650,8 @@ void performCalibration(String mode, uint8_t source) {
 void getCal() {
   /* If calibration is inactive, do nothing */
   if (calStatus == CAL_INACTIVE) return;
+
+  //Serial.println("calStatus: " + (String)calStatus);
 
   /* Start calibration procedure */
   if (calStatus == CAL_STARTING) {
@@ -681,7 +704,7 @@ void getCal() {
     setCalibration(false, false);
     setOffsetCalibration(false, false);
 
-    broadcastWs("{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"state\":\"starting\"}");
+    broadcastWs("{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"onScreen\":" + (String)onScreenCal + ",\"state\":\"starting\"}");
     debug("CAL - STARTING");
   }
 
@@ -699,7 +722,6 @@ void getCal() {
         pointMsg += "{\"point\":" + (String)detectedPoints + ",\"x\":" + (String)irPoints[i].x + ",\"y\":" + (String)irPoints[i].y + "}";
         detectedPoints++;
       }
-      
     }
 
     if (calMode == CAL_MODE_MULTI) {
@@ -725,7 +747,6 @@ void getCal() {
         offset_storedCoordinates[cal_count][1] = cal_currentCoordinates[0][1];
       }
       
-
       /* prepare data */
       msg = "{\"status\":\"calibration\",\"mode\":\"" + calModeStr + "\",\"state\":\"newPoint\",\"point\":" + (String)cal_count + ",\"x\":" + (String)cal_currentCoordinates[0][0] + ",\"y\":" + (String)cal_currentCoordinates[0][1] + "}";
       
@@ -756,7 +777,6 @@ void getCal() {
         for (int i = 0; i < 4; i++) {
           cal.setCalibrationPoint(i, 0, cal_storedCoordinates[i][0]);
           cal.setCalibrationPoint(i, 1, cal_storedCoordinates[i][1]);
-          
         }
         
         cal.orderCalibrationArray();
@@ -769,6 +789,7 @@ void getCal() {
           irPoints[i].setCalObjects(cal, offsetCal);
         }
 
+        cal.setBounds(calBounds[0], calBounds[1], calBounds[2], calBounds[3]);
         setCalibration(cal_storedCoordinates, offsetPoints, sensorConfig.calibrationOffsetEnable);
 
         /* Store the calibration points */
@@ -781,6 +802,11 @@ void getCal() {
         preferences.putFloat("calY_1", cal_storedCoordinates[1][1]);
         preferences.putFloat("calY_2", cal_storedCoordinates[2][1]);
         preferences.putFloat("calY_3", cal_storedCoordinates[3][1]);
+
+        preferences.putFloat("calBoundsXmin", calBounds[0]);
+        preferences.putFloat("calBoundsXmax", calBounds[1]);
+        preferences.putFloat("calBoundsYmin", calBounds[2]);
+        preferences.putFloat("calBoundsYmax", calBounds[3]);
         preferences.end();
         calSuccess = true;
       }
@@ -876,7 +902,6 @@ void cancelCalibrationOnDisconnect(uint8_t source) {
 }
 
 void setCalibration(float calPoints[][2], float offsetPoints[][2], bool offsetEn) {
-
   if (offsetEn) {
     for (int i = 0; i < 4; i++) {
       cal.setCalibrationPoint(i, 0, calPoints[i][0] + offsetPoints[i][0]);

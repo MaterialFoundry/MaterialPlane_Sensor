@@ -23,7 +23,8 @@ MAX17260::MAX17260(int sda, int scl, int clk) {
  */
 void MAX17260::begin() {
     pointerToMAX17260Class = this;
-    Wire.begin(_sda, _scl);
+    Wire.setPins(_sda, _scl);
+    Wire.begin();
     Wire.setClock(_i2cClk);
 }
 

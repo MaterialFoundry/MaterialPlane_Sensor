@@ -20,16 +20,16 @@ void websocketLoop() {
 }
 
 void printWebsocketStatus() {
-  Serial.printf("Websocket mode:\t\t%s\nPort:\t\t\t%d\nConnected Clients:\t%d\n", websocketModeString[networkConfig.websocketMode], networkConfig.websocketPort, webSocketServer.connectedClients());
-  for (int i=0; i<webSocketServer.connectedClients(); i++) Serial.printf("\t\t\t%d\t%s\n", i+1, getWebsocketIp(i));
-  Serial.printf("\n");
+  Serial.printf("Websocket mode:\t\t%s\r\nPort:\t\t\t%d\r\nConnected Clients:\t%d\r\n", websocketModeString[networkConfig.websocketMode], networkConfig.websocketPort, webSocketServer.connectedClients());
+  for (int i=0; i<webSocketServer.connectedClients(); i++) Serial.printf("\t\t\t%d\t%s\r\n", i+1, getWebsocketIp(i));
+  Serial.printf("\r\n");
 }
 
 void initializeWebsocket() {
-  Serial.printf("------------------------------------\nInitializing websocket\n\n");
+  Serial.printf("------------------------------------\r\nInitializing websocket\r\n\r\n");
 
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.printf("Failed: No WiFi\n\n");
+  if (WiFi.status() != WL_CONNECTED && wifiMode != WIFI_AP) {
+    Serial.printf("Failed: No WiFi\r\n\r\n");
     return;
   }
   
@@ -55,10 +55,12 @@ void webSocketServerEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
       {
           debug("STATUS - WS - DISCONNECTED - " + (String)num);
           // cancelCalibrationOnDisconnect(num);
-          if (getWebsocketClientNum() == 0) {
-            ledcWrite(CONNECTION_LED_RED, LED_R_MAX);
-            ledcWrite(CONNECTION_LED_GREEN, 0);
-          }
+          #ifdef CONNECTION_LED
+            if (getWebsocketClientNum() == 0) {
+              ledcWrite(CONNECTION_LED_RED, LED_R_MAX);
+              ledcWrite(CONNECTION_LED_GREEN, 0);
+            }
+          #endif
       }
       break;
     case WStype_CONNECTED:
@@ -71,8 +73,10 @@ void webSocketServerEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
           initialSend = false;
         }
         statusTimer = millis() - STATUS_PERIOD;
-        ledcWrite(CONNECTION_LED_RED, 0);
-        ledcWrite(CONNECTION_LED_GREEN, LED_G_MAX);
+        #ifdef CONNECTION_LED
+          ledcWrite(CONNECTION_LED_RED, 0);
+          ledcWrite(CONNECTION_LED_GREEN, LED_G_MAX);
+        #endif
       }
       break;
     case WStype_TEXT:

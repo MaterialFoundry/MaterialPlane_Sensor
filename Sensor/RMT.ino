@@ -10,7 +10,15 @@
   
   unsigned long rmtResetTimer = 0;
   uint32_t codeOld;
+  volatile unsigned long rmtTimer = 0;
 
+  void IRAM_ATTR rmtISR() {
+    rmtTimer = millis();
+  }
+ 
+  unsigned long getRmtBusy() {
+    return millis() - rmtTimer < 10;
+  }
 
   /**
    * Initialize RMT by setting pinmodes, applying power to the sensor and starting the rmt object
@@ -19,6 +27,7 @@
     pinMode(RMT_PWR_PIN, OUTPUT);
     pinMode(RMT_IN_PIN, INPUT);
     digitalWrite(RMT_PWR_PIN, HIGH);
+    attachInterrupt(RMT_IN_PIN, rmtISR, CHANGE);
     rmt.start(); 
   }
   
@@ -68,4 +77,5 @@
 #else
   void initializeRmt() {}
   void rmtLoop() {}
+  unsigned long getRmtBusy() {return 0;}
 #endif

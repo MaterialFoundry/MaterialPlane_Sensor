@@ -15,14 +15,45 @@ homography::homography(){
             _H[i][j] = 0;
 
     //initialize bounds array
-    _bounds[0][0] = 0;
-    _bounds[0][1] = 0;
-    _bounds[0][2] = 4096;
-    _bounds[0][3] = 4096;
-    _bounds[1][0] = 4096;
-    _bounds[1][1] = 0;
-    _bounds[1][2] = 0;
-    _bounds[1][3] = 4096;
+    setBounds();
+
+    /*
+    double xMin = 409.6;
+    double xMax = 3686.4;
+    double yMin = 682.667;
+    double yMax = 3413.333;
+
+    _bounds[0][0] = xMin;      //point 0 x
+    _bounds[0][1] = xMin;      //point 1 x
+    _bounds[0][2] = xMax;   //point 2 x
+    _bounds[0][3] = xMax;   //point 3 x
+    _bounds[1][0] = yMax;   //point 0 y
+    _bounds[1][1] = yMin;      //point 1 y
+    _bounds[1][2] = yMin;      //point 2 y
+    _bounds[1][3] = yMax;   //point 3 y
+    */
+}
+
+void homography::setBounds(double xMin, double xMax, double yMin, double yMax) {
+    _bounds[0][0] = xMin;   //point 0 x
+    _bounds[0][1] = xMin;   //point 1 x
+    _bounds[0][2] = xMax;   //point 2 x
+    _bounds[0][3] = xMax;   //point 3 x
+    _bounds[1][0] = yMax;   //point 0 y
+    _bounds[1][1] = yMin;   //point 1 y
+    _bounds[1][2] = yMin;   //point 2 y
+    _bounds[1][3] = yMax;   //point 3 y
+}
+
+void homography::setBounds2(double xMax1, double yMax1, double xMax2, double yMin1, double xMin1, double yMin2, double xMin2, double yMax2) {
+    _bounds[0][0] = xMin1;   //point 0 x
+    _bounds[0][1] = xMin2;   //point 1 x
+    _bounds[0][2] = xMax1;   //point 2 x
+    _bounds[0][3] = xMax2;   //point 3 x
+    _bounds[1][0] = yMax1;   //point 0 y
+    _bounds[1][1] = yMin1;   //point 1 y
+    _bounds[1][2] = yMin2;   //point 2 y
+    _bounds[1][3] = yMax2;   //point 3 y
 }
 
 void homography::calculateHomographyMatrix() {
@@ -30,29 +61,32 @@ void homography::calculateHomographyMatrix() {
     mtx_type AT[8][8];
     mtx_type B[8][8];
     mtx_type C[8] ={_bounds[0][0],_bounds[1][0],
-                  _bounds[0][1],_bounds[1][1],
-                  _bounds[0][2],_bounds[1][2],
-                  _bounds[0][3],_bounds[1][3]};
+                    _bounds[0][1],_bounds[1][1],
+                    _bounds[0][2],_bounds[1][2],
+                    _bounds[0][3],_bounds[1][3]};
     mtx_type D[8];
     mtx_type E[8];
 
     for (int i=0; i<4; i++){
-        A[0][i*2] = _calArray[0][i];
-        A[0][i*2+1] = 0;
-        A[1][i*2] = _calArray[1][i];
-        A[1][i*2+1] = 0;
-        A[2][i*2] = 1;
-        A[2][i*2+1] = 0;
-        A[3][i*2] = 0;
-        A[3][i*2+1] = _calArray[0][i];
-        A[4][i*2] = 0;
-        A[4][i*2+1] = _calArray[1][i];
-        A[5][i*2] = 0;
-        A[5][i*2+1] = 1;
-        A[6][i*2] = (float)-_bounds[0][i]*_calArray[0][i];
-        A[6][i*2+1] = (float)-_bounds[1][i]*_calArray[0][i];
-        A[7][i*2] = (float)-_bounds[0][i]*_calArray[1][i];
-        A[7][i*2+1] = (float)-_bounds[1][i]*_calArray[1][i];
+        uint8_t col = i*2;
+        A[0][col] = _calArray[0][i];
+        A[1][col] = _calArray[1][i];
+        A[2][col] = 1;
+        A[3][col] = 0;
+        A[4][col] = 0;
+        A[5][col] = 0;
+        A[6][col] = (float)-_bounds[0][i]*_calArray[0][i];
+        A[7][col] = (float)-_bounds[0][i]*_calArray[1][i];
+        
+        col = i*2+1;
+        A[0][col] = 0;
+        A[1][col] = 0;
+        A[2][col] = 0;
+        A[3][col] = _calArray[0][i];
+        A[4][col] = _calArray[1][i];
+        A[5][col] = 1;
+        A[6][col] = (float)-_bounds[1][i]*_calArray[0][i];
+        A[7][col] = (float)-_bounds[1][i]*_calArray[1][i];
     }
 
     Matrix.Transpose((mtx_type*)A, 8, 8, (mtx_type*)AT);
@@ -85,6 +119,26 @@ double homography::getX(){
 
 double homography::getY(){
     return _y;
+}
+
+void homography::calculateInvertedCoordinates(double x, double y){
+    mtx_type TP[3] = {x,y,1};
+    mtx_type outputTemp[3];
+    mtx_type _Hinv[3][3];
+    Matrix.Invert((mtx_type*)_Hinv, 3);
+    Matrix.Multiply((mtx_type*)TP, (mtx_type*)_Hinv, 1, 3, 3, (mtx_type*)outputTemp);
+    outputTemp[0] /= outputTemp[2];
+    outputTemp[1] /= outputTemp[2];
+    _xInv = outputTemp[0];
+    _yInv = outputTemp[1];
+}
+
+double homography::getXinv(){
+    return _xInv;
+}
+
+double homography::getYinv(){
+    return _yInv;
 }
 
 void homography::setCalibrationPoint(int point,int axis, float value){

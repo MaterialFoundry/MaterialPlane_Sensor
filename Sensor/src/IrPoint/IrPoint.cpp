@@ -39,7 +39,6 @@ bool IrPoint::updateData() {
     x = (float)_xAverage.getAverage(xRaw*16)/16;
     y = (float)_yAverage.getAverage(yRaw*16)/16;
    
-    
     if (_calibration) {
         _cal.calculateCoordinates(x, y);
         x = _cal.getX();

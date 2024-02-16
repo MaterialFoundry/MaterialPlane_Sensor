@@ -12,7 +12,7 @@ unsigned long checkMCPtimer = 0;
 SOC_TH socState = SOC_NORMAL;
 bool powerSource = 0;
 
-#ifdef TINYPICO_BATTERY_MONITOR
+#if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
   float tpBatStorage = 0;
   uint8_t chargeCounter = 0;
   uint8_t chargeSum = 0;
@@ -44,10 +44,10 @@ void clearBatteryPreferences() {
  */
 void printBatteryStatus() {
   #ifdef PRODUCTION_BATTERY_MONITOR
-      Serial.printf("Charging State:\t\t%s\nPercentage:\t\t%d%%\n", MCP73871.getStatusString(), (uint8_t)MAX17260.getPercentage());
-      if (MCP73871.getStatus() == STAT_CHARGING) Serial.printf("Time to Full:\t\t%s\n",secondsToTime(MAX17260.getTimeToFull()));
-      else if (MCP73871.getStatus() == STAT_SHUTDOWN) Serial.printf("Time to Empty:\t\t%s\n",secondsToTime(MAX17260.getTimeToEmpty()));
-      Serial.printf("Voltage:\t\t%.3f V\nCurrent:\t\t%d mA\nCapacity:\t\t%d/%d mAh\n\n", ((uint16_t)MAX17260.getAverageVoltage())*0.001, (int16_t)MAX17260.getCurrent(), (uint16_t)MAX17260.getCapacity(), (uint16_t)MAX17260.getFullCapacity());
+      Serial.printf("Charging State:\t\t%s\r\nPercentage:\t\t%d%%\r\n", MCP73871.getStatusString(), (uint8_t)MAX17260.getPercentage());
+      if (MCP73871.getStatus() == STAT_CHARGING) Serial.printf("Time to Full:\t\t%s\r\n",secondsToTime(MAX17260.getTimeToFull()));
+      else if (MCP73871.getStatus() == STAT_SHUTDOWN) Serial.printf("Time to Empty:\t\t%s\r\n",secondsToTime(MAX17260.getTimeToEmpty()));
+      Serial.printf("Voltage:\t\t%.3f V\r\nCurrent:\t\t%d mA\r\nCapacity:\t\t%d/%d mAh\r\n\r\n", ((uint16_t)MAX17260.getAverageVoltage())*0.001, (int16_t)MAX17260.getCurrent(), (uint16_t)MAX17260.getCapacity(), (uint16_t)MAX17260.getFullCapacity());
   #endif
 }
 
@@ -55,7 +55,7 @@ void printBatteryStatus() {
  * Initialize battery management
  */
 void initializeBatteryManagement(bool forceReset) {
-  Serial.printf("------------------------------------\nInitializing battery management\n\n");
+  Serial.printf("------------------------------------\r\nInitializing battery management\r\n\r\n");
   #ifdef PRODUCTION_BATTERY_MONITOR
     /* Set pinmode to detect the input power source */
     pinMode(LM66200_POWER_STATE_PIN, INPUT_PULLUP);
@@ -77,7 +77,7 @@ void initializeBatteryManagement(bool forceReset) {
      * MAX17260.begin() and MAX17260.setSenseResistor() must be called before this
      */
     if (forceReset || MAX17260.getPOR()) {
-      Serial.printf("Loading fuel gauge model config\n");
+      Serial.printf("Loading fuel gauge model config\r\n");
       setModelConfig();
     }
 
@@ -105,8 +105,12 @@ void initializeBatteryManagement(bool forceReset) {
     
   #endif
 
-  #ifdef TINYPICO_BATTERY_MONITOR
+  #if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
     tpAverageVoltage.setNrOfReadings(100);
+  #endif
+
+  #if defined(TINYS3_BATTERY_MONITOR)
+    tp.begin();
   #endif
   
   /* Print status */
@@ -118,7 +122,6 @@ void initializeBatteryManagement(bool forceReset) {
  */
 void batteryManagementLoop() {
   #ifdef PRODUCTION_BATTERY_MONITOR
-
     if (powerSource != digitalRead(LM66200_POWER_STATE_PIN)) {
       powerSource = digitalRead(LM66200_POWER_STATE_PIN);
        /* Set the max charging current */
@@ -155,10 +158,17 @@ void batteryManagementLoop() {
     }
   #endif
 
-  #ifdef TINYPICO_BATTERY_MONITOR
+
+  #if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
     tpVoltage = tpAverageVoltage.getAverage(tp.GetBatteryVoltage()*1000);
     tpBatteryPercentage = getBatteryPercentage(tpVoltage);
-    tpUsbActive = analogRead(USB_ACTIVE_PIN)>1000 ? true : false;
+    
+    #if defined(TINYPICO_BATTERY_MONITOR)
+      tpUsbActive = analogRead(USB_ACTIVE_PIN)>1000 ? true : false;
+    #elif defined(TINYS3_BATTERY_MONITOR)
+      tpUsbActive = tp.getVbusPresent();
+    #endif
+    
     if (tpUsbActive) {
       chargeSum += (int)tp.IsChargingBattery();
       chargeCounter++;
@@ -187,19 +197,20 @@ void batteryManagementLoop() {
       statusTimer = millis() - STATUS_PERIOD;
     }
   #endif
+
 }
 
-#ifdef TINYPICO_BATTERY_MONITOR
+#if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
   /**
    * Get a very rough estimate of the battery voltage.
    */
-  uint8_t getBatteryPercentage(float v) {
-    if (v > 4.2) v = 4.20;
+  uint8_t getBatteryPercentage(uint16_t v) {
+    if (v > 4200) v = 4200;
     int8_t percentage = 0;
-    if (v < 3.25) percentage =  round(80*(v-3.00));
-    else if (v >= 3.25 && v < 3.75) percentage =  round(20 + 120*(v-3.25));
-    else if (v >= 3.75 && v < 4.00) percentage =  round(80 + 60*(v-3.75));
-    else if (v >= 4.00) percentage =  round(95 + 50*(v-4.00));
+    if (v < 3250) percentage =  round(0.08*(v-3000));
+    else if (v >= 3250 && v < 3750) percentage =  round(20 + 0.12*(v-3250));
+    else if (v >= 3750 && v < 4000) percentage =  round(80 + 0.06*(v-3750));
+    else if (v >= 4000) percentage =  round(95 + 0.05*(v-4000));
     if (percentage < 0) percentage = 0;
     else if (percentage > 100) percentage = 100;
     return percentage;

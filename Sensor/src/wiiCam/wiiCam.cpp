@@ -119,7 +119,6 @@ bool wiiCam::getOutput(IrPoint *irPoints){
       irPoints[i].setMaxBrightness(brightness);
       irPoints[i].setAvgBrightness(brightness);
     }
-    
     irPoints[i].updateData();
   }
   return detectedPoints;

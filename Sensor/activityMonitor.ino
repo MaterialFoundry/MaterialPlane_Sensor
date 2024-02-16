@@ -65,10 +65,6 @@ void initializeActivityMonitor() {
     /* If no valid min cpu freq is found, stick to idle freq (80MHz) */
     if (i == 2) minCpuFreq = CPU_FREQ_IDLE;
   }
-  Serial.print("Xtal freq: ");
-  Serial.println(freq);
-  Serial.print("Min CPU freq: ");
-  Serial.println(minCpuFreq);
 
   /* Create the activity monitor task */
   xTaskCreatePinnedToCore(

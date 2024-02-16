@@ -1,13 +1,18 @@
 # Material Plane Sensor Changelog
-### Sensor v3.0.4 - 8-12-2023
+### Sensor v3.1.0 - 17-02-2024
 Additions:
 <ul>
-<li>Sensor firmware now works on the DIY sensors</li>
+<li>Firmware works on the DIY sensors again</li>
+<li>Firmware can now be installed on ESP32-S3 boards, including the TinyS3, which is an alternative to the TinyPICO for the full diy sensor</li>
+<li>Sensor can now be calibrated from the webserver</li>
+<li>Added ability to do OTA (WiFi) updates through Material Companion and Arduino IDE</li>
+<li>If sensor can't connect to a WiFi network it will host its own network for configuration purposes</li>
 </ul>
 
 Fixes:
 <ul>
 <li>Material Companion can now read sensor configuration over USB even if 'Serial Output' is disabled</li>
+<li>Sensor will wait transmitting coordinate data if no base ID has been resolved, but decoding is in progress</li>
 </ul>
 
 Other:

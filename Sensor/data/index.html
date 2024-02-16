@@ -25,6 +25,71 @@
 
     <div id="mainBody" style="display:none">
 
+      <div id="calibrationPopup" class="modal">
+        
+        <div class="modal-content">
+          <span class="close" id="closeCalibrationPopup">&times;</span>
+
+          <h2>Calibration</h2>
+          <div id="calibrationContent"></div>
+
+          <br>
+          <h3><b>Calibration Points</b></h3> 
+
+          <table style="float:right;text-align:center;width:100%">
+            <tr>
+                <th style="width:33.3%">Point</th>
+                <th style="width:33.3%">X</th>
+                <th style="width:33.3%">Y</th> 
+            </tr>
+            <tr>
+                <td id="iterationPoint-0" style="color:grey">0</td>
+                <td id="mpCalPoint_x-0" style="color:grey">0</td>
+                <td id="mpCalPoint_y-0" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="iterationPoint-1" style="color:grey">1</td>
+              <td id="mpCalPoint_x-1" style="color:grey">0</td>
+              <td id="mpCalPoint_y-1" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="iterationPoint-2" style="color:grey">2</td>
+              <td id="mpCalPoint_x-2" style="color:grey">0</td>
+              <td id="mpCalPoint_y-2" style="color:grey">0</td>
+            </tr>
+            <tr>
+              <td id="iterationPoint-3" style="color:grey">3</td>
+              <td id="mpCalPoint_x-3" style="color:grey">0</td>
+              <td id="mpCalPoint_y-3" style="color:grey">0</td>
+            </tr>
+          </table>
+
+          <p id="noMovement" style="display:none">
+            <b>Move a base to a calibration point and wait a few seconds.</b>
+          </p>
+      
+          <p id="waiting" style="display:none">
+              <b>Locking in point in 5 seconds.</b>
+          </p>
+      
+          <p id="calDone" style="display:none">
+              <b>Calibration done. You can close this window or wait 5 seconds.</b>
+          </p>
+      
+          <p id="calCancel" style="display:none">
+              <b>Calibration cancelled. You can close this window or wait 5 seconds.</b>
+          </p>
+      
+          <button name="calNext" type="button" id="calNextBtn">
+              <i></i> Next
+          </button>
+      
+          <button type="submit" id="calCloseBtn" style="display:none">
+              Close
+          </button>
+        </div>
+      </div>
+
       <!-- Update popup -->
       <div id="updatePopup" class="modal">
         <!-- Popup content -->
@@ -160,7 +225,7 @@
       </div>
 
       <div class="settingsBtn">
-        <label class="tooltip">Reset settings to default values
+        <label class="tooltip">Reset Settings to Default Values
           <span class="tooltiptext">Reset some or all of the sensor settings. Will open a pop-up for further selection.</span>
         </label>
         <input type="button" id="resetSettings" value="Reset">
@@ -195,7 +260,7 @@
       </div>
 
       <div class="settingsBtn">
-        <label class="tooltip">Restart sensor
+        <label class="tooltip">Restart Sensor
           <span class="tooltiptext">Restarts the sensor.</span>
         </label>
         <input type="button" id="restart" value="Restart">
@@ -413,8 +478,8 @@
 
         <!-- Brightness -->
         <div class="mpConfigFormElements">
-            <label class="tooltip" for="mpSensorBrightness">Brightness
-              <span class="tooltiptext">Sets the brightness. Higher values will increase the brightness of points</span>
+            <label class="tooltip" for="mpSensorBrightness">Sensitivity
+              <span class="tooltiptext">Sets the sensor sensitivity. Higher values will increase the brightness of detected infrared points</span>
             </label>
             <div class="mpConfigFormValRange">
                 <input type="range" id="mpSensorBrightness" min=1 max=100 step=1>

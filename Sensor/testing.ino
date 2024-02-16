@@ -15,8 +15,8 @@ void startTest() {
       String msg = Serial0.readStringUntil('\n');
       Serial0.println(msg);
       
-      if (msg == "TEST") Serial0.print("OK\n");
-      else if (msg == "GET LM66200 STATE") Serial0.print((String)digitalRead(LM66200_POWER_STATE_PIN) + '\n');
+      if (msg == "TEST") Serial0.print("OK\r\n");
+      else if (msg == "GET LM66200 STATE") Serial0.print((String)digitalRead(LM66200_POWER_STATE_PIN) + "\r\n");
       else if (msg == "GREEN 1") digitalWrite(BATTERY_LED_GREEN_PIN, HIGH);
       else if (msg == "GREEN 0") digitalWrite(BATTERY_LED_GREEN_PIN, LOW);
       else if (msg == "RED 1") digitalWrite(BATTERY_LED_RED_PIN, HIGH);
@@ -24,9 +24,9 @@ void startTest() {
       else if (msg == "PAJ") testPaj();
       else if (msg == "GAUGE") testGauge();
       else if (msg == "GAUGE_ALERT") testGaugeAlert();
-      else if (msg == "CHARGER_PG") Serial0.print((String)digitalRead(MCP73871_PG_PIN) + '\n');
-      else if (msg == "CHARGER_STAT1") Serial0.print((String)digitalRead(MCP73871_STAT1_PIN) + '\n');
-      else if (msg == "CHARGER_STAT2") Serial0.print((String)digitalRead(MCP73871_STAT2_PIN) + '\n');
+      else if (msg == "CHARGER_PG") Serial0.print((String)digitalRead(MCP73871_PG_PIN) + "\r\n");
+      else if (msg == "CHARGER_STAT1") Serial0.print((String)digitalRead(MCP73871_STAT1_PIN) + "\r\n");
+      else if (msg == "CHARGER_STAT2") Serial0.print((String)digitalRead(MCP73871_STAT2_PIN) + "\r\n");
       else if (msg == "RMT") testRMT();
     }
   }
@@ -38,18 +38,18 @@ void testRMT() {
   while(1) {
     while(rmt.available()){
       rmt_rx_data_t received = rmt.read();
-      Serial0.print((String)received.protocol + '\n');
+      Serial0.print((String)received.protocol + "\r\n");
       if (received.protocol == "MP") {
-        Serial0.print("RMT OK\n");
+        Serial0.print("RMT OK\r\n");
         break;
       }
       if (millis() - t >= 2500) {
-        Serial0.print("RMT NOK\n");
+        Serial0.print("RMT NOK\r\n");
         break;
       }
     }
     if (millis() - t >= 2500) {
-      Serial0.print("RMT NOK\n");
+      Serial0.print("RMT NOK\r\n");
       break;
     }
   }
@@ -58,7 +58,7 @@ void testRMT() {
 void testGauge() {
   initializeBatteryManagement(true);
   MAX17260.registerInterrupt(MAX17260_ALERT_PIN);
-  Serial0.print((String)MAX17260.getAverageCurrent() + '\n');
+  Serial0.print((String)MAX17260.getAverageCurrent() + "\r\n");
 }
 
 void testGaugeAlert() {
@@ -66,11 +66,11 @@ void testGaugeAlert() {
   unsigned long t = millis();
   while(1) {
     if (MAX17260.getInterruptState()) {
-      Serial0.print("ALERT OK\n");
+      Serial0.print("ALERT OK\r\n");
       break;
     }
     if (millis() - t >= 2500) {
-      Serial0.print("ALERT NOK\n");
+      Serial0.print("ALERT NOK\r\n");
       break;
     }
   }
@@ -84,19 +84,19 @@ void testPaj() {
 
   bool irSensorConnected = IRsensor.begin();
     if (!irSensorConnected) {
-      Serial0.print("PAJ_CON NOK\n");
+      Serial0.print("PAJ_CON NOK\r\n");
     }
     else {
-      Serial0.print("PAJ_CON OK\n");
+      Serial0.print("PAJ_CON OK\r\n");
       IRsensor.setDebugMode(0x06);
       unsigned long timeoutTimer = millis();
       while (1) {
         if (IRsensor.getInterruptState()) {
-          Serial0.print("PAJ_REC OK\n");
+          Serial0.print("PAJ_REC OK\r\n");
           break;
         }
         if (millis() - timeoutTimer >= 2500) {
-          Serial0.print("PAJ_REC NOK\n");
+          Serial0.print("PAJ_REC NOK\r\n");
           break;
         }
       }

@@ -6,8 +6,9 @@
 #define DEFINITIONS_H
 
 #define TEST_PIN    8
+//#define SERIAL_DEBUG
 
-#define FIRMWARE_VERSION  "3.0.4"           /* Firmware version of the sensor */
+#define FIRMWARE_VERSION  "3.1.0"           /* Firmware version of the sensor */
 #define DEVICE_NAME       "materialsensor"  /* (Default) device name which is used to name the access point and webserver address (e.g. http://materialsensor.local) */
 
 const String GITHUB_LINK PROGMEM = "https://github.com/CDeenen/MaterialPlane_Hardware/releases?q=webserver&expanded=true"; /* GitHub link to get firmware updates from */

@@ -78,7 +78,7 @@ class RMT_RX
         uint32_t readRaw(String protocolLabel = "");
         void registerProtocol(rmt_protocol_t protocol);
         String getErr(rmt_err err);
-
+        
     private:
         int64_t readData(String protocolLabel = "");
         int64_t parseIrItem(rmt_item32_t* item, size_t item_size, rmt_protocol_t protocol);
@@ -87,6 +87,7 @@ class RMT_RX
         rmt_config_t _config;
         RingbufHandle_t _ringbuffer;
         rmt_protocol_t _protocol;
+        bool _busy = false;
 };
 
 #endif /* ESP_RMT_H */

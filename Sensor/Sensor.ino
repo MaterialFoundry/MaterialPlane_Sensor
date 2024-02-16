@@ -8,6 +8,10 @@
 #include <WiFi.h>
 #include "src/ArduinoJson-6.x/ArduinoJson-v6.20.0.h"
 #include "src/RunningAverage/RunningAverage.h"
+#include <ArduinoOTA.h>
+#include "src/AsyncElegantOTA/src/AsyncElegantOTA.h"
+
+//#define SERIAL_DEBUG
 
 #ifdef PAJ_SENSOR
   #include "src/PAJ7025R3/PAJ7025R3.h"
@@ -34,6 +38,14 @@
 #ifdef TINYPICO_BATTERY_MONITOR
   #include "src/tinypico-helper/src/TinyPICO.h"
   TinyPICO tp = TinyPICO();
+#endif
+
+#ifdef TINYS3_BATTERY_MONITOR
+  #include "src/tinys3-helper/src/UMS3.h"
+  UMS3 tp;
+#endif
+
+#if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
   uint16_t tpVoltage = 0;
   bool tpUsbActive = false;
   bool tpUsbActiveOld = false;
@@ -42,6 +54,8 @@
   uint8_t tpChargeSum = 0;
   uint8_t tpBatteryPercentage = 0;
 #endif
+
+
 
 #ifdef SERIAL_DEBUG
   #define Serial Serial0
@@ -96,6 +110,8 @@ void setOffsetCalibration(bool val, bool save = true);
 void setBrightness(uint8_t val, bool save = true);
 void setMinBrightness(uint8_t val, bool save = true);
 
+IPAddress sensorIP = IPAddress(0, 0, 0, 0);
+
 void setup() {
   #ifdef NATIVE_USB
     delay(2000);        /* Delay to allow native USB port to initialize */
@@ -111,10 +127,13 @@ void setup() {
       &comTask,
       1
     );
+
+    
 }
 
 void loop() {
-  
+  ArduinoOTA.handle();
+  //ElegantOTA.loop();
 }
 
 void comTaskLoop(void * parameter) {

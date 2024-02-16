@@ -1,4 +1,4 @@
-const webserverVersion = "v2.0.1";
+const webserverVersion = "v2.1.0";
 
 let ws;                         //Websocket variable
 let wsOpen = false;             //Bool for checking if websocket has ever been opened => changes the warning message if there's no connection
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
         document.getElementById("scanWiFi").value = "Scanning.  ";
         let counter = 0;
         document.scanInterval = setInterval(()=>{
-            if (counter >= 20) {
+            if (counter >= 40) {
                 clearInterval(document.scanInterval);
                 document.getElementById("scanWiFi").value = "Scan";
                 return;
@@ -143,6 +143,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
     document.getElementById("mpSensorCalEn").addEventListener("change", (event) =>                  { sendWS(JSON.stringify({ir:{calibration:event.target.checked ? '1' : '0'}})); });
     document.getElementById("mpSensorOffsetEn").addEventListener("change", (event) =>               { sendWS(JSON.stringify({ir:{offsetCalibration:event.target.checked ? '1' : '0'}})); });
     
+    document.getElementById("mpConfigPerformCal").addEventListener('click', (event) =>              { sendWS(JSON.stringify({event:"calibration", state:"start", mode:document.getElementById('mpCalMethod').value})); })
+    document.getElementById("closeCalibrationPopup").addEventListener('click', (event) =>           { stopCalibration(true, true); });
+    document.getElementById("calCloseBtn").addEventListener('click', (event) =>                     { stopCalibration(true, true); });
+    document.getElementById("calNextBtn").addEventListener('click', (event) =>                      { sendWS(JSON.stringify({event:"calibration", state:"next"})); });
 
     //Console
     document.getElementById("consoleClear").addEventListener("click", (event) => {
@@ -294,7 +298,7 @@ function analyzeMessage(msg) {
         document.getElementById("waitMessage").style = "display:none";
         document.getElementById("mainBody").style = "";
     }
-    else console.log('data',data)
+    //else console.log('data',data)
 
     if (data.status == "disableTimeout") {
         disableTimeout = true;
@@ -332,7 +336,7 @@ function analyzeMessage(msg) {
         document.getElementById("debugEn").checked = settings.debug;
         document.getElementById("serialOut").checked = settings.serialMode == 'default';
 
-        if (hwVariant == "Production" || hwVariant == "DIY Full") {
+        if (hwVariant == "Production" || hwVariant == "DIY Full" || hwVariant == "DIY Full S3") {
             //Power settings
             document.getElementById("chargingState").innerHTML = power.chargerStatus;
             if (power.chargerStatus != "Not Charging" && power.chargerStatus != "Charging" && power.chargerStatus != "Charged" && power.chargerStatus != "USB Not Connected") document.getElementById("chargingState").style.color = '#FF0000';
@@ -352,15 +356,16 @@ function analyzeMessage(msg) {
                     document.getElementById("batteryTimeToEmpty_div").style.display = "";
                     document.getElementById("batteryTimeToEmpty").innerHTML = timeStr;
                 }
-                else if (hwVariant == "DIY Full") {
+                else if (hwVariant == "DIY Full" || hwVariant == "DIY Full S3") {
                     document.getElementById("batPercentage").style.display = "none";
                 }
             }
             else if (hwVariant == "Production") document.getElementById("batteryTimeToEmpty_div").style.display = "none";
-            else if (hwVariant == "DIY Full") {
+            else if (hwVariant == "DIY Full" || hwVariant == "DIY Full S3") {
                 document.getElementById("batPercentage").style.display = "";
             }
-            document.getElementById("batteryVoltage").innerHTML = `${parseInt(power.voltage)/1000} V`;
+            const voltage = Math.round(parseInt(power.voltage)/100)/10;
+            document.getElementById("batteryVoltage").innerHTML = `${voltage.toPrecision(2)} V`;
             if (hwVariant == "Production") {
                 document.getElementById("batteryCurrent").innerHTML = `${power.current} mA`;
                 document.getElementById("batteryCapacity").innerHTML = `${power.capacity}/${power.fullCapacity} mAh`;
@@ -427,66 +432,10 @@ function analyzeMessage(msg) {
     }
      
     else if (data.status == "IR data") {
-        drawIrCoordinates(data);
-        return;
-        const points = data.data;
-        
-        for (let i=0; i<4; i++) {
-            let point = points[i];
-            if (point == undefined || isNaN(point.x)  || isNaN(point.y)) {
-                point = {
-                    x: 0,
-                    y: 0,
-                    avgBrightness: 0,
-                    maxBrightness: 0,
-                    area: 0,
-                    radius: 0,
-                    id: 0,
-                }
-                
-            }
-            if (i == 0) {
-                document.getElementById("baseId").innerHTML = point?.id == undefined ? 0 : point.id;
-                document.getElementById("baseCmd").innerHTML = point?.command == undefined ? 0 : point.command;
-            }
-            
-            document.getElementById(`cal_x${i}`).innerHTML = Math.round(point.x);
-            document.getElementById(`cal_y${i}`).innerHTML = Math.round(point.y);
-            document.getElementById(`cal_ab${i}`).innerHTML = point.avgBrightness == undefined ? "NA" : Math.round(point.avgBrightness);
-            document.getElementById(`cal_mb${i}`).innerHTML = Math.round(point.maxBrightness);
-            document.getElementById(`cal_a${i}`).innerHTML = point.area == undefined ? "NA" : Math.round(point.area);
-
-
-            let color = "black";
-            if (data.x < 0 || data.x > 4096 || data.y < 0 || data.y > 4096) color = "red";
-            if (data.maxBrightness == 0) color = "grey";
-
-            document.getElementById(`iteration${i}`).style.color = (point.maxBrightness == 0) ? 'grey' : pointColors[i];
-            document.getElementById(`cal_x${i}`).style.color=color;
-            document.getElementById(`cal_y${i}`).style.color=color;
-            document.getElementById(`cal_ab${i}`).style.color=color;
-            document.getElementById(`cal_mb${i}`).style.color=color;
-            document.getElementById(`cal_a${i}`).style.color=color;
-        }
-
-        let stage = document.getElementById('stage');
-        if(stage.getContext) {
-            var ctx = stage.getContext('2d');
-        }
-        ctx.fillStyle = '#FF0000';
-        ctx.clearRect(0, 0, stage.width, stage.height);
-        for (let point of points) {
-            if (point == undefined || point.x == undefined) continue;
-            if (point.x > 0 && point.y < 4096) {
-                const x = point.x/4096*stage.width;
-                const y = point.y/4096*stage.height;
-                ctx.fillStyle = pointColors[point.point];
-                ctx.beginPath();
-                ctx.arc(x,y,3,0,2*Math.PI,false);
-                ctx.fill();
-                ctx.fillText(point.point, x + 5, y + 10);
-            }
-        }
+        if (calibrationActive)
+            updateCalibrationPoint(data);
+        else 
+            drawIrCoordinates(data);
     }
     else if (data.status == 'autoExposure') {
         if (data.state == 'starting') {
@@ -500,7 +449,176 @@ function analyzeMessage(msg) {
             alert("Autoexposure failed. Please make sure only 1 base/pen is active and try again.")
         }
     }
+    else if (data.status == 'calibration') {
+        if (data.state == 'starting') startCalibration(data.mode);
+        else if (data.state == 'newPoint' && data.mode == 'MultiPoint') updateMultiCalibrationPoint(data.points);
+        else if (data.state == 'newPoint') setCalibrationPoint(data);
+        else if (data.state == 'done') calibrationDone();
+        else if (data.state == 'cancelled') stopCalibration();
+        
+    }
+
+}
+
+let calibrationActive = false;
+let calibrationPointCount = 0;
+let countdown;
+let calibrationMode = '';
+
+function startCalibration(mode) {
+    calibrationMode = mode;
+    calibrationActive = true;
+    document.getElementById("noMovement").style="";
+    document.getElementById("waiting").style="display:none";
+    document.getElementById("calDone").style="display:none";
+    document.getElementById("calCancel").style="display:none";
+    document.getElementById("calCloseBtn").style="display:none";
+    document.getElementById("calNextBtn").style="";
+    document.getElementById("calibrationPopup").style.display = "block";
+    countdownCount = 5;
+    calibrationPointCount = 0;
+    clearInterval(countdown);
+    for (let i=0; i<4; i++) {
+        document.getElementById("mpCalPoint_x-"+i).innerHTML=Math.round(0);
+        document.getElementById("mpCalPoint_y-"+i).innerHTML=Math.round(0);
+        document.getElementById("iterationPoint-"+i).style.color='grey';
+        document.getElementById("mpCalPoint_x-"+i).style.color='grey';
+        document.getElementById("mpCalPoint_y-"+i).style.color='grey';
+    }
     
+    let msg = '';
+    if (mode == 'SinglePoint') msg += "Starting single-point calibration.<br>";
+    else if (mode == 'Offset') msg += "Starting offset calibration.<br>";
+    if (mode == 'SinglePoint' || mode == 'Offset') msg +=
+        `
+            To calibrate, move the base to one of the corners of your display and wait a few seconds (production hardware) or hold the button on the base for a few seconds and then wait (DIY hardware).<br>
+            The center of the base must align with the corner of the display.
+        `
+    if (mode == 'MultiPoint') {
+        msg += `
+            Starting multipoint calibration.<br>
+            To calibrate, make sure all 4 IR points are visible and their coordinates are displayed. Then press 'Calibrate'.
+        `;
+        document.getElementById('calNextBtn').innerHTML='Calibrate';
+        document.getElementById('calNextBtn').disabled=true;
+    }
+    else {
+        document.getElementById('calNextBtn').innerHTML='Next';
+        document.getElementById('calNextBtn').disabled=false;
+    }
+    document.getElementById("calibrationContent").innerHTML = msg;
+}
+
+function updateCalibrationPoint(data) {
+    if (calibrationMode == 'MultiPoint') return;
+
+    const point = data.irPoints[0];
+
+    document.getElementById("noMovement").style="display:none";
+    document.getElementById("waiting").style="";
+    countdownCount = 5;
+    const txt = `<b>Locking in point in 5 seconds.</b>`;
+    document.getElementById("waiting").innerHTML=txt;
+    clearInterval(countdown);
+    countdown = setInterval(calibrationTimer,1000);
+
+    if (point.x != undefined && point.y != undefined && point.x != 0 && point.y != 0 && point.x != -9999 && point.y != -9999) {
+        document.getElementById("mpCalPoint_x-"+calibrationPointCount).innerHTML=Math.round(point.x);
+        document.getElementById("mpCalPoint_y-"+calibrationPointCount).innerHTML=Math.round(point.y);
+    }
+
+}
+
+function updateMultiCalibrationPoint(data) {
+    if (calibrationMode != 'MultiPoint') return;
+
+    let points = 0;
+    for (let i = 0; i<4; i++) {
+        if (data[i]?.x != undefined && data[i]?.y != undefined) {
+            if (data[i].x != 0 && data[i].y != 0 && data[i].x != -9999 && data[i].y != -9999) {
+                points++;
+                document.getElementById("mpCalPoint_x-"+i).innerHTML=Math.round(data[i].x);
+                document.getElementById("mpCalPoint_y-"+i).innerHTML=Math.round(data[i].y);
+            }
+            document.getElementById("iterationPoint-"+i).style.color='black';
+            document.getElementById("mpCalPoint_x-"+i).style.color='black';
+            document.getElementById("mpCalPoint_y-"+i).style.color='black';
+        }
+        else {
+            document.getElementById("mpCalPoint_x-"+i).innerHTML=0;
+            document.getElementById("mpCalPoint_y-"+i).innerHTML=0;
+            document.getElementById("iterationPoint-"+i).style.color='grey';
+            document.getElementById("mpCalPoint_x-"+i).style.color='grey';
+            document.getElementById("mpCalPoint_y-"+i).style.color='grey';
+        }
+    }
+
+    if (points == 4) {
+        document.getElementById('calNextBtn').disabled=false;
+    }
+    else {
+        document.getElementById('calNextBtn').disabled=true;
+    }
+}
+
+function setCalibrationPoint(data) {
+    if (data.x != undefined && data.y != undefined && data.x != 0 && data.y != 0 && data.x != -9999 && data.y != -9999) {
+        document.getElementById("mpCalPoint_x-"+data.point).innerHTML=Math.round(data.x);
+        document.getElementById("mpCalPoint_y-"+data.point).innerHTML=Math.round(data.y);
+        calibrationPointCount++;
+        document.getElementById("iterationPoint-"+data.point).style.color='black';
+        document.getElementById("mpCalPoint_x-"+data.point).style.color='black';
+        document.getElementById("mpCalPoint_y-"+data.point).style.color='black';
+    }
+}
+
+function calibrationTimer() {
+    countdownCount = countdownCount-1;
+    if (!calibrationActive) {
+        clearInterval(countdown);
+        return;
+    }
+        
+    if (countdownCount > 0) {
+        const txt = `<b>Locking in point in ` + countdownCount + ` seconds.</b>`;
+        document.getElementById("waiting").innerHTML=txt;
+    }
+    else {
+        clearInterval(countdown);
+        countdownCount = 5;
+        document.getElementById("noMovement").style="";
+        document.getElementById("waiting").style="display:none";
+        sendWS(JSON.stringify({event:"calibration", state:"next"}));
+    }
+}
+
+function nextCalibrationPoint() {
+    if (!calibrationActive) return;
+    sendWS(JSON.stringify({event:"calibration", state:"next"}));
+}
+
+function calibrationDone() {
+    setTimeout(function(){document.getElementById("calibrationPopup").style.display = 'none';},5000);
+    calibrationActive = false;
+    document.getElementById("calDone").style="";
+    document.getElementById("calNextBtn").style="display:none";
+    document.getElementById("calCloseBtn").style="";
+    document.getElementById("noMovement").style="display:none";
+    document.getElementById("waiting").style="display:none";
+}
+
+function stopCalibration(closeNow = false, sendWs = false) {
+    calibrationActive = false;
+    if (sendWs) sendWS(JSON.stringify({event:"calibration", state:"cancel"}));
+    if (closeNow) document.getElementById("calibrationPopup").style.display = 'none'
+    else {
+        document.getElementById("calCancel").style="";
+        document.getElementById("calNextBtn").style="display:none";
+        document.getElementById("calCloseBtn").style="";
+        document.getElementById("noMovement").style="display:none";
+        document.getElementById("waiting").style="display:none";
+        setTimeout(function(){document.getElementById("calibrationPopup").style.display = 'none';},5000);
+    }
 }
 
 function updateIrPoint(data, point) {
@@ -591,7 +709,7 @@ let hwVariantFiltered = "";
 
 function hwVariantFilter(variant) {
     if (variant == 'DIY Basic') variant = 'DIY_Basic';
-    else if (variant == 'DIY Full') variant = 'DIY_Full';
+    else if (variant == 'DIY Full' || hwVariant == "DIY Full S3") variant = 'DIY_Full';
     if (hwVariantFiltered == variant) return;
 
     hideElementsByClassName('Production', variant != 'Production');
@@ -609,18 +727,6 @@ function hideElementsByClassName(className, hide) {
         elmnt.style.display = hide ? 'none' : '';
     }
 }
-/*
-async function checkForUpdates(fwVersion, wsVersion) {
-    if (displayUpdateAvailable) return;
-    displayUpdateAvailable = true;
-    const latestVersions = await getLatestVersion();
-    console.log('latest',latestVersions)
-
-    const fw = compareVersions(fwVersion, latestVersions.firmware);
-    const ws = compareVersions(wsVersion, latestVersions.webserver);
-    console.log(fw, ws)
-}
-*/
 
 function checkForUpdates(fwVersion, wsVersion) {
     if (displayUpdateAvailable) return;
@@ -699,8 +805,6 @@ function compareVersions(currentVersion, latestVersion) {
         latestVersion[i] = isNaN(parseInt(latestVersion[i])) ? 0 : parseInt(latestVersion[i]);
         currentVersion[i] = isNaN(parseInt(currentVersion[i])) ? 0 : parseInt(currentVersion[i]);
     }
-
-    console.log(currentVersion,latestVersion)
     
     if (currentVersion[0] > latestVersion[0]) return false;
     if (currentVersion[0] < latestVersion[0]) return true;
@@ -709,54 +813,3 @@ function compareVersions(currentVersion, latestVersion) {
     if (currentVersion[2] >= latestVersion[2]) return false;
     return true;
   }
-/*
-$('form').submit(function(e){
-    e.preventDefault();
-    const fileName = document.getElementById("updateFirmware").value;
-    if (fileName === '') {
-      console.log('No file selected')
-      return;
-    }
-    console.log(`Uploading file '${fileName}' to the sensor`)
-    
-    var form = $('#upload_form')[0];
-    var data = new FormData(form);
-    let done = false;
-    document.getElementById("prgBar").style.display = "";
-
-    $.ajax({
-      url: '/update',
-      type: 'POST',
-      data: data,
-      contentType: false,
-      processData:false,
-      xhr: function() {
-        var xhr = new window.XMLHttpRequest();
-        xhr.upload.addEventListener('progress', function(evt) {
-          if (evt.lengthComputable) {
-            var per = evt.loaded / evt.total;
-            //$('#prg').html('progress: ' + Math.round(per*100) + '%');
-            document.getElementById("prg").style.width = Math.round(per*100) + '%';
-            console.log('progress: ' + Math.round(per*100) + '%');
-            if (done == false && Math.round(per*100) == 100) {
-                console.log('Upload done');
-                done = true;
-                ws.close();
-                setTimeout(()=>{
-                    resetWS(20000);
-                    //$('#prg').html('progress: 0%');
-                    document.getElementById("prg").style.width = 0 + '%';
-                    document.getElementById("prgBar").style.display = "none";
-                    if (fileName.includes('webserver')) forceRefresh = true;
-                },1000);
-                
-            }
-          }
-        }, false);
-        return xhr;
-      },
-      success:function(d, s) {console.log('success!')},
-      error: function (a, b, c) {}
-    });
-  });
-  */

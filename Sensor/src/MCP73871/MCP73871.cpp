@@ -111,14 +111,17 @@ void MCP73871::interruptHandlerPG() {
 }
 
 static void MCP73871outsideInterruptHandlerStat1() {
+    Serial.println("INT1");
     pointerToMCP73871Class->interruptHandlerStat1();
 }
 
 static void MCP73871outsideInterruptHandlerStat2() {
+    Serial.println("INT2");
     pointerToMCP73871Class->interruptHandlerStat2();
 }
 
 static void MCP73871outsideInterruptHandlerPG() {
+    Serial.println("INTPG");
     pointerToMCP73871Class->interruptHandlerPG();
 }
 

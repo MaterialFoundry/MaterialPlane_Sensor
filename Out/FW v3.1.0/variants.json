@@ -1,0 +1,27 @@
+[
+    {
+        "label": "DIY Basic (ESP32)", 
+        "src": "DIY_Basic.zip",
+        "chip": "esp32"
+    },
+    {
+        "label": "DIY Basic (ESP32-S3)", 
+        "src": "DIY_Basic_S3.zip",
+        "chip": "esp32s3"
+    },
+    {
+        "label": "DIY Full (TinyPico)", 
+        "src": "DIY_Full.zip",
+        "chip": "esp32"
+    },
+    {
+        "label": "DIY Full (TinyS3)", 
+        "src": "DIY_Full_S3.zip",
+        "chip": "esp32s3"
+    },
+    {
+        "label": "Production",
+        "src": "Production.zip",
+        "chip": "esp32s3"
+    }
+]

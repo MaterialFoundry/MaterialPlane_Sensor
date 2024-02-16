@@ -41,7 +41,7 @@ void ledLoop() {
   /* Do every 50ms */
   if (millis() - ledTimer >= 50) {
     ledTimer = millis();
-    #if defined(PRODUCTION_BATTERY_MONITOR) || defined(TINYPICO_BATTERY_MONITOR)
+    #if defined(PRODUCTION_BATTERY_MONITOR) || defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
     
       if (ledTimerCount == 0) {
       
@@ -61,7 +61,7 @@ void ledLoop() {
         else if (chargingStatus == STAT_SHUTDOWN) ledLoopNotCharging();
       #endif
 
-      #ifdef TINYPICO_BATTERY_MONITOR
+      #if defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
         if (chargingStatus == "Charging") ledLoopCharging();
         else if (chargingStatus == "Charged") ledLoopCharged();
         else if (chargingStatus == "USB Not Connected") ledLoopNotCharging();
@@ -83,7 +83,7 @@ void ledLoop() {
   }
 }
 
-#if defined(PRODUCTION_BATTERY_MONITOR) || defined(TINYPICO_BATTERY_MONITOR)
+#if defined(PRODUCTION_BATTERY_MONITOR) || defined(TINYPICO_BATTERY_MONITOR) || defined(TINYS3_BATTERY_MONITOR)
 void ledLoopCharging() {
   if (chargingLedDir) {
     chargingLedState += LED_FADE_STEP;
